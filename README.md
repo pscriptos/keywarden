@@ -44,14 +44,19 @@ git clone https://git.techniverse.net/scriptos/keywarden.git
 cd keywarden
 ```
 
-Create a `.env` file:
+Create a `.env` file and generate two separate cryptographically secure keys:
 
-```env
-KEYWARDEN_SESSION_KEY=your-random-session-key-at-least-32-characters
-KEYWARDEN_ENCRYPTION_KEY=your-random-encryption-key-at-least-32-chars
+```bash
+# Generate keys (run twice, once per key):
+openssl rand -base64 48
 ```
 
-> **Important:** Change both keys to unique random strings. The encryption key protects all stored SSH private keys — if lost, they cannot be recovered.
+```env
+KEYWARDEN_SESSION_KEY=<first generated string>
+KEYWARDEN_ENCRYPTION_KEY=<second generated string>
+```
+
+> **Important:** Change both keys to unique random strings. The encryption key protects all stored SSH private keys — if lost, they cannot be recovered. See the [Quick Start Guide](docs/quickstart.md) for more options to generate secure keys.
 
 ### 2. Start
 

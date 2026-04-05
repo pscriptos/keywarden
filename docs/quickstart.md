@@ -17,10 +17,25 @@ mkdir keywarden && cd keywarden
 
 Create a `.env` file with at minimum these settings:
 
+Generate two separate, cryptographically secure random strings (minimum 32 characters each):
+
+```bash
+# Linux / macOS
+openssl rand -base64 48
+
+# Alternative without OpenSSL
+head -c 48 /dev/urandom | base64
+
+# Windows (PowerShell)
+[Convert]::ToBase64String((1..48 | ForEach-Object { Get-Random -Max 256 }) -as [byte[]])
+```
+
+Each command produces a 64-character Base64 string. Run it **twice** — once for each key — and paste the values below:
+
 ```env
 # REQUIRED: Change these for security!
-KEYWARDEN_SESSION_KEY=your-random-session-key-at-least-32-characters
-KEYWARDEN_ENCRYPTION_KEY=your-random-encryption-key-at-least-32-chars
+KEYWARDEN_SESSION_KEY=<first generated string>
+KEYWARDEN_ENCRYPTION_KEY=<second generated string>
 
 # Optional: Owner credentials (defaults: admin / auto-generated password)
 KEYWARDEN_OWNER_USER=admin
