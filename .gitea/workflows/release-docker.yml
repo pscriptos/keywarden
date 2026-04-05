@@ -19,12 +19,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Extract version from tag
         id: version
         run: |
-          # Release tag is e.g. v0.1.0
+          # Release tag from release event, or latest git tag for workflow_dispatch
           TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then
+            TAG="$(git describe --tags --abbrev=0 2>/dev/null || echo '')"
+          fi
+          if [ -z "$TAG" ]; then
+            echo "::error::No tag found. Please create a release or tag first."
+            exit 1
+          fi
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           # Strip 'v' prefix for docker tag if needed
           VERSION="${TAG#v}"
