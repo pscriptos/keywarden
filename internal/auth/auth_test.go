@@ -418,3 +418,100 @@ func TestEnableDisableMFA(t *testing.T) {
 		t.Fatal("MFA should be disabled")
 	}
 }
+
+func TestGetUserByUsername(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	svc := NewService(db)
+
+	created, _ := svc.Register("testuser", "test@example.com", "pass", "user", false)
+
+	user, err := svc.GetUserByUsername("testuser")
+	if err != nil {
+		t.Fatalf("GetUserByUsername failed: %v", err)
+	}
+	if user.ID != created.ID {
+		t.Fatalf("Expected user ID %d, got %d", created.ID, user.ID)
+	}
+	if user.Username != "testuser" {
+		t.Fatalf("Expected username 'testuser', got %q", user.Username)
+	}
+
+	// Non-existent user
+	_, err = svc.GetUserByUsername("nonexistent")
+	if err != ErrUserNotFound {
+		t.Fatalf("Expected ErrUserNotFound, got %v", err)
+	}
+}
+
+func TestResetPassword(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	svc := NewService(db)
+
+	created, _ := svc.Register("testuser", "test@example.com", "oldpass", "user", false)
+
+	// Reset without MFA reset
+	newPass, err := svc.ResetPassword(created.ID, false)
+	if err != nil {
+		t.Fatalf("ResetPassword failed: %v", err)
+	}
+	if len(newPass) != 20 {
+		t.Fatalf("Expected 20-char password, got %d chars", len(newPass))
+	}
+
+	// Old password should fail
+	_, err = svc.Login("testuser", "oldpass")
+	if err != ErrInvalidCredentials {
+		t.Fatal("Old password should no longer work after reset")
+	}
+
+	// New password should work
+	user, err := svc.Login("testuser", newPass)
+	if err != nil {
+		t.Fatalf("Login with reset password failed: %v", err)
+	}
+	if !user.MustChangePassword {
+		t.Fatal("must_change_password should be set after reset")
+	}
+
+	// Account lockout should be cleared
+	if user.FailedLoginAttempts != 0 {
+		t.Fatalf("Expected 0 failed attempts after reset, got %d", user.FailedLoginAttempts)
+	}
+}
+
+func TestResetPasswordWithMFA(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	svc := NewService(db)
+
+	created, _ := svc.Register("testuser", "test@example.com", "oldpass", "user", false)
+
+	// Enable MFA
+	svc.EnableMFA(created.ID, "TESTSECRET")
+
+	// Reset with MFA reset
+	newPass, err := svc.ResetPassword(created.ID, true)
+	if err != nil {
+		t.Fatalf("ResetPassword with MFA reset failed: %v", err)
+	}
+
+	// Verify MFA is disabled
+	user, err := svc.GetUserByID(created.ID)
+	if err != nil {
+		t.Fatalf("GetUserByID failed: %v", err)
+	}
+	if user.MFAEnabled {
+		t.Fatal("MFA should be disabled after reset with --reset-mfa")
+	}
+	if user.MFASecret != "" {
+		t.Fatalf("MFA secret should be empty after reset, got %q", user.MFASecret)
+	}
+
+	// New password should work
+	_, err = svc.Login("testuser", newPass)
+	if err != nil {
+		t.Fatalf("Login with reset password failed: %v", err)
+	}
+}

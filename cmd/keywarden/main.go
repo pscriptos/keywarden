@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -27,6 +28,18 @@ import (
 )
 
 func main() {
+	// Handle CLI subcommands before starting the server
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "reset-password":
+			handleResetPassword(os.Args[2:])
+			return
+		case "help", "--help", "-h":
+			printUsage()
+			return
+		}
+	}
+
 	// Load config first (needed for log level)
 	cfg := config.Load()
 
@@ -187,4 +200,87 @@ func validateDataPaths(cfg *config.Config) {
 			}
 		}
 	}
+}
+
+// handleResetPassword implements the "reset-password" CLI subcommand.
+// Usage: keywarden reset-password --username <name> [--reset-mfa]
+func handleResetPassword(args []string) {
+	var username string
+	var resetMFA bool
+
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--username", "-u":
+			if i+1 < len(args) {
+				i++
+				username = args[i]
+			} else {
+				fmt.Fprintln(os.Stderr, "Error: --username requires a value")
+				os.Exit(1)
+			}
+		case "--reset-mfa":
+			resetMFA = true
+		default:
+			fmt.Fprintf(os.Stderr, "Error: unknown flag '%s'\n", args[i])
+			fmt.Fprintln(os.Stderr, "Usage: keywarden reset-password --username <name> [--reset-mfa]")
+			os.Exit(1)
+		}
+	}
+
+	if username == "" {
+		fmt.Fprintln(os.Stderr, "Error: --username is required")
+		fmt.Fprintln(os.Stderr, "Usage: keywarden reset-password --username <name> [--reset-mfa]")
+		os.Exit(1)
+	}
+
+	// Load config for DB path
+	cfg := config.Load()
+
+	// Open database
+	db, err := database.New(cfg.DBPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to open database: %v\n", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	authSvc := auth.NewService(db)
+
+	// Look up the user
+	user, err := authSvc.GetUserByUsername(username)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: user '%s' not found\n", username)
+		os.Exit(1)
+	}
+
+	// Reset password
+	newPassword, err := authSvc.ResetPassword(user.ID, resetMFA)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to reset password: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("════════════════════════════════════════════════════════════")
+	fmt.Printf("  Password reset successful for user: %s\n", user.Username)
+	fmt.Printf("  New password: %s\n", newPassword)
+	if resetMFA {
+		fmt.Println("  MFA has been disabled for this account.")
+	}
+	fmt.Println("  The user must change this password after login.")
+	fmt.Println("════════════════════════════════════════════════════════════")
+}
+
+// printUsage displays available CLI subcommands
+func printUsage() {
+	fmt.Println("Keywarden - Centralized SSH Key Management and Deployment")
+	fmt.Println()
+	fmt.Println("Usage:")
+	fmt.Println("  keywarden                                         Start the server")
+	fmt.Println("  keywarden reset-password --username <name>        Reset a user's password")
+	fmt.Println("    --reset-mfa                                     Also disable MFA")
+	fmt.Println("  keywarden help                                    Show this help")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  docker exec -it keywarden ./keywarden reset-password --username admin")
+	fmt.Println("  docker exec -it keywarden ./keywarden reset-password --username admin --reset-mfa")
 }

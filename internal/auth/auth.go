@@ -104,6 +104,59 @@ func (s *Service) Login(username, password string) (*models.User, error) {
 	return user, nil
 }
 
+// GetUserByUsername returns a user by their username
+func (s *Service) GetUserByUsername(username string) (*models.User, error) {
+	user := &models.User{}
+	err := s.db.QueryRow(
+		`SELECT id, username, email, password_hash, role, mfa_enabled, mfa_secret, theme, email_notify_login, avatar_base64, must_change_password, failed_login_attempts, locked_until, last_login_at, created_at, updated_at FROM users WHERE username = ?`,
+		username,
+	).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.Role, &user.MFAEnabled, &user.MFASecret, &user.Theme, &user.EmailNotifyLogin, &user.AvatarBase64, &user.MustChangePassword, &user.FailedLoginAttempts, &user.LockedUntil, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrUserNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user: %w", err)
+	}
+
+	return user, nil
+}
+
+// ResetPassword generates a new random password for the given user, sets
+// must_change_password = true, resets lockout counters and optionally
+// disables MFA. Returns the generated password.
+func (s *Service) ResetPassword(userID int64, resetMFA bool) (string, error) {
+	password, err := generateSecurePassword(20)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate password: %w", err)
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	_, err = s.db.Exec(
+		`UPDATE users SET password_hash = ?, must_change_password = 1, failed_login_attempts = 0, locked_until = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		string(hash), userID,
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to update password: %w", err)
+	}
+
+	if resetMFA {
+		_, err = s.db.Exec(
+			`UPDATE users SET mfa_enabled = 0, mfa_secret = '', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+			userID,
+		)
+		if err != nil {
+			return "", fmt.Errorf("failed to reset MFA: %w", err)
+		}
+	}
+
+	return password, nil
+}
+
 // GetUserByID returns a user by their ID
 func (s *Service) GetUserByID(id int64) (*models.User, error) {
 	user := &models.User{}
