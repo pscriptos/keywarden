@@ -10,7 +10,7 @@
 >
 > - **Do NOT expose this application directly to the public internet.** Use it only in trusted, private networks.
 > - The software may contain bugs, incomplete features, or security issues.
-> - **Your feedback is valuable!** If you discover bugs or have suggestions, please report them at [git.techniverse.net/scriptos/keywarden](https://git.techniverse.net/scriptos/keywarden). Every report helps improve the project.
+> - **Your feedback is valuable!** If you discover bugs or have suggestions, please open an [Issue on GitHub](https://github.com/pscriptos/keywarden/issues). Every report helps improve the project.
 
 ---
 
@@ -114,3 +114,16 @@ For detailed documentation, see the [docs/](docs/README.md) folder:
 Keywarden is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0-or-later)](LICENSE).
 
 © 2026 Patrick Asmus ([scriptos](https://git.techniverse.net/scriptos))
+
+---
+
+## Repository & Mirror
+
+| | URL |
+|---|---|
+| **Primary (Gitea)** | [git.techniverse.net/scriptos/keywarden](https://git.techniverse.net/scriptos/keywarden) |
+| **Mirror (GitHub)** | [github.com/pscriptos/keywarden](https://github.com/pscriptos/keywarden) |
+
+The **primary repository** is hosted on Gitea. The GitHub repository is a read-only mirror.
+
+**Bug reports & feature requests:** Please open an [Issue on GitHub](https://github.com/pscriptos/keywarden/issues) — registration on the Gitea instance is currently closed.
