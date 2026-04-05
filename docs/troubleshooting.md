@@ -213,3 +213,11 @@ Every HTTP request is logged with:
 - Response time
 - Client IP address
 - Username (if authenticated)
+
+---
+
+## Still Need Help?
+
+If your issue isn't covered here, join the community Matrix chat to ask for help:
+
+➡️ [#keywarden:techniverse.net](https://matrix.to/#/#keywarden:techniverse.net)

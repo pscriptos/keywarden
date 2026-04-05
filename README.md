@@ -122,6 +122,16 @@ Keywarden is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.
 
 ---
 
+## Community
+
+Join the **Keywarden Matrix chat** to discuss the project, ask questions, or share feedback:
+
+[![Matrix](https://img.shields.io/badge/Matrix-%23keywarden%3Atechniverse.net-blue?logo=matrix)](https://matrix.to/#/#keywarden:techniverse.net)
+
+➡️ [#keywarden:techniverse.net](https://matrix.to/#/#keywarden:techniverse.net)
+
+---
+
 ## Repository & Mirror
 
 | | URL |
