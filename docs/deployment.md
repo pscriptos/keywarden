@@ -8,7 +8,23 @@ Keywarden is designed as a single-container application with an embedded SQLite 
 
 ### Docker Image
 
-Build from source or use the pre-built image:
+Keywarden provides pre-built Docker images via the container registry:
+
+**Container Registry:** [git.techniverse.net/scriptos/-/packages/container/keywarden](https://git.techniverse.net/scriptos/-/packages/container/keywarden)
+
+Pull the latest image:
+
+```bash
+docker pull git.techniverse.net/scriptos/keywarden:latest
+```
+
+Or pull a specific version:
+
+```bash
+docker pull git.techniverse.net/scriptos/keywarden:v0.1.1-alpha
+```
+
+Alternatively, build from source:
 
 ```bash
 # Build from source

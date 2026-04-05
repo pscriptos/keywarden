@@ -236,7 +236,7 @@ func TestEnsureAdmin(t *testing.T) {
 		t.Fatalf("Expected owner role, got %q", user.Role)
 	}
 
-	// Second call should be no-op
+	// Second call should be no-op (users exist)
 	created2, _, err := svc.EnsureAdmin("admin2", "admin2@test.com")
 	if err != nil {
 		t.Fatalf("Second EnsureAdmin should not fail: %v", err)
@@ -249,6 +249,25 @@ func TestEnsureAdmin(t *testing.T) {
 	_, err = svc.Login("admin2", "anypass")
 	if err != ErrInvalidCredentials {
 		t.Fatalf("admin2 should not have been created")
+	}
+
+	// initial_setup_complete flag should be set
+	if !svc.isInitialSetupComplete() {
+		t.Fatal("Expected initial_setup_complete flag to be set after EnsureAdmin")
+	}
+
+	// Even if all users are deleted, EnsureAdmin must NOT create a new admin
+	// because the initial_setup_complete flag is set (defence-in-depth).
+	_, err = db.Exec(`DELETE FROM users`)
+	if err != nil {
+		t.Fatalf("Failed to delete all users: %v", err)
+	}
+	created3, _, err := svc.EnsureAdmin("admin3", "admin3@test.com")
+	if err != nil {
+		t.Fatalf("Third EnsureAdmin should not fail: %v", err)
+	}
+	if created3 {
+		t.Fatal("EnsureAdmin must not create a user when initial_setup_complete flag is set")
 	}
 }
 

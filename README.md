@@ -138,6 +138,7 @@ Join the **Keywarden Matrix chat** to discuss the project, ask questions, or sha
 |---|---|
 | **Primary (Gitea)** | [git.techniverse.net/scriptos/keywarden](https://git.techniverse.net/scriptos/keywarden) |
 | **Mirror (GitHub)** | [github.com/pscriptos/keywarden](https://github.com/pscriptos/keywarden) |
+| **Container Registry** | [git.techniverse.net/scriptos/-/packages/container/keywarden](https://git.techniverse.net/scriptos/-/packages/container/keywarden) |
 
 The **primary repository** is hosted on Gitea. The GitHub repository is a read-only mirror.
 

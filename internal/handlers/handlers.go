@@ -306,7 +306,6 @@ func (h *Handler) loadTemplates(templateFS embed.FS) {
 		"admin_settings", "system_info",
 		"cron", "cron_add", "cron_edit",
 		"assignments", "assignments_add", "assignments_edit",
-		"force_password_change",
 	}
 	for _, page := range pages {
 		pageContent, err := fs.ReadFile(templateFS, "templates/"+page+".html")
@@ -334,6 +333,17 @@ func (h *Handler) loadTemplates(templateFS embed.FS) {
 		logging.Fatal("Failed to parse login: %v", err)
 	}
 	h.templates["login"] = loginTmpl
+
+	// Force password change page has its own layout (standalone, no sidebar)
+	fpcContent, err := fs.ReadFile(templateFS, "templates/force_password_change.html")
+	if err != nil {
+		logging.Fatal("Failed to read force_password_change template: %v", err)
+	}
+	fpcTmpl, err := template.New("force_password_change").Funcs(funcMap).Parse(string(fpcContent))
+	if err != nil {
+		logging.Fatal("Failed to parse force_password_change: %v", err)
+	}
+	h.templates["force_password_change"] = fpcTmpl
 
 	// MFA required page has its own layout (standalone, no sidebar)
 	mfaReqContent, err := fs.ReadFile(templateFS, "templates/mfa_required.html")
@@ -2225,7 +2235,7 @@ func (h *Handler) handleForcePasswordChange(w http.ResponseWriter, r *http.Reque
 			User:           user,
 			PasswordPolicy: &policy,
 		}
-		h.templates["force_password_change"].ExecuteTemplate(w, "base", data)
+		h.templates["force_password_change"].Execute(w, data)
 		return
 	}
 
@@ -2239,7 +2249,7 @@ func (h *Handler) handleForcePasswordChange(w http.ResponseWriter, r *http.Reque
 			PasswordPolicy: &policy,
 			Flash:          &Flash{Type: "danger", Message: "Passwords do not match."},
 		}
-		h.templates["force_password_change"].ExecuteTemplate(w, "base", data)
+		h.templates["force_password_change"].Execute(w, data)
 		return
 	}
 
@@ -2250,7 +2260,7 @@ func (h *Handler) handleForcePasswordChange(w http.ResponseWriter, r *http.Reque
 			PasswordPolicy: &policy,
 			Flash:          &Flash{Type: "danger", Message: err.Error()},
 		}
-		h.templates["force_password_change"].ExecuteTemplate(w, "base", data)
+		h.templates["force_password_change"].Execute(w, data)
 		return
 	}
 
@@ -2261,7 +2271,7 @@ func (h *Handler) handleForcePasswordChange(w http.ResponseWriter, r *http.Reque
 			PasswordPolicy: &policy,
 			Flash:          &Flash{Type: "danger", Message: "Failed to change password: " + err.Error()},
 		}
-		h.templates["force_password_change"].ExecuteTemplate(w, "base", data)
+		h.templates["force_password_change"].Execute(w, data)
 		return
 	}
 
