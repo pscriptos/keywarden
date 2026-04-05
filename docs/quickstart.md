@@ -22,9 +22,9 @@ Create a `.env` file with at minimum these settings:
 KEYWARDEN_SESSION_KEY=your-random-session-key-at-least-32-characters
 KEYWARDEN_ENCRYPTION_KEY=your-random-encryption-key-at-least-32-chars
 
-# Optional: Admin credentials (defaults: admin / auto-generated password)
-KEYWARDEN_ADMIN_USER=admin
-KEYWARDEN_ADMIN_EMAIL=admin@example.com
+# Optional: Owner credentials (defaults: admin / auto-generated password)
+KEYWARDEN_OWNER_USER=admin
+KEYWARDEN_OWNER_EMAIL=admin@example.com
 
 # Optional: Port (default: 8080)
 KEYWARDEN_PORT=8080
