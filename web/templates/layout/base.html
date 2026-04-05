@@ -1,0 +1,669 @@
+{{define "base"}}
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <title>{{.Title}} - {{appName}}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <!-- Preload icon font to prevent re-decode lag on tab restore -->
+    <link rel="preload" href="/static/css/fonts/tabler-icons.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Resolve theme BEFORE loading CSS to prevent FOUC (flash of unstyled content) -->
+    <script>
+      (function() {
+        var theme = '{{with .User}}{{.Theme}}{{end}}' || 'auto';
+        var resolved = theme;
+        if (theme === 'auto') {
+          resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-bs-theme', resolved);
+        document.documentElement.style.colorScheme = resolved;
+      })();
+    </script>
+    <style>
+      /* Critical inline styles: prevent white flash between page navigations */
+      html[data-bs-theme="dark"],
+      html[data-bs-theme="dark"] body { background-color: #0F1829; color-scheme: dark; }
+      html[data-bs-theme="light"],
+      html[data-bs-theme="light"] body { background-color: #f1f5f9; color-scheme: light; }
+      .navbar-brand-image { height: 2rem; }
+      .keywarden-brand { font-weight: 700; font-size: 1.25rem; color: #206bc4; }
+      [data-bs-theme="dark"] .keywarden-brand { color: #4da3ff; }
+      /* Text selection colors */
+      [data-bs-theme="dark"] ::selection { background: #3d6098; color: #f0f4f8; }
+      [data-bs-theme="dark"] ::-moz-selection { background: #3d6098; color: #f0f4f8; }
+      [data-bs-theme="light"] ::selection { background: #b3d4fc; color: #1a1a1a; }
+      [data-bs-theme="light"] ::-moz-selection { background: #b3d4fc; color: #1a1a1a; }
+
+      /* Consistent spacing between Tabler icons and adjacent text */
+      i.ti { margin-right: 0.25em; }
+      .btn-icon > i.ti, .input-icon-addon > i.ti, .nav-link-icon > i.ti { margin-right: 0; }
+
+      /* ══ PAGE LAYOUT: full-width header on top, sidebar + content below ══ */
+      .page {
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 100vh;
+      }
+      .page-content-row {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      /* ── Full-width top header ── */
+      header.navbar.keywarden-top-header {
+        background: #1D2B38 !important;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        flex-shrink: 0;
+        z-index: 1030;
+      }
+      [data-bs-theme="light"] header.navbar.keywarden-top-header {
+        background: #1D2B38 !important;
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+      }
+      header.navbar.keywarden-top-header .nav-link { color: #c8d6e5 !important; }
+      header.navbar.keywarden-top-header .nav-link .text-secondary { color: #8fa8c8 !important; }
+      header.navbar.keywarden-top-header .fw-bold { color: #e8eef5; }
+
+      /* ── Header brand area (left side, aligned with sidebar) ── */
+      .keywarden-header-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0 0.5rem;
+        white-space: nowrap;
+      }
+      .keywarden-header-brand .keywarden-brand { color: #c8d6e5; font-size: 1.15rem; }
+      .keywarden-header-brand .keywarden-brand:hover { color: #fff; text-decoration: none; }
+      .keywarden-header-brand .keywarden-brand i.ti { color: #4da3ff; font-size: 1.3rem; }
+
+      /* ── Angular header buttons ── */
+      header.navbar.keywarden-top-header .btn-header-modern {
+        color: #c8d6e5;
+        background: rgba(255,255,255,0.06);
+        border: 2px solid rgba(255,255,255,0.18);
+        border-radius: 4px;
+        padding: 0.35rem 1rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(4px);
+      }
+      header.navbar.keywarden-top-header .btn-header-modern:hover {
+        color: #fff;
+        background: rgba(255,255,255,0.14);
+        border-color: rgba(255,255,255,0.32);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      }
+      header.navbar.keywarden-top-header .btn-header-modern.btn-icon {
+        width: 2.16875rem;
+        height: 2.16875rem;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+      }
+
+      /* ── Sidebar (vertical, below header) ── */
+      .navbar-vertical {
+        background: #1D2B38 !important;
+        flex-shrink: 0;
+        overflow: hidden;
+        align-self: stretch;
+        display: flex;
+        flex-direction: column;
+      }
+      .navbar-vertical > .container-fluid {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .navbar-vertical .navbar-collapse {
+        flex: 1;
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .navbar-vertical .navbar-nav {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      [data-bs-theme="light"] .navbar-vertical { background: #1D2B38 !important; }
+
+      /* ── Page content area ── */
+      .page-wrapper {
+        flex: 1;
+        min-width: 0;
+        overflow-y: auto;
+        margin-left: 0 !important;
+      }
+      [data-bs-theme="dark"] .page-wrapper { background: #0F1829; }
+      [data-bs-theme="dark"] .page-body { background: #0F1829; }
+      html[data-bs-theme="dark"],
+      html[data-bs-theme="dark"] body { background-color: #0F1829 !important; }
+      .page-body { content-visibility: auto; contain-intrinsic-size: auto 500px; }
+
+      /* ── Narrower dashboard stat cards ── */
+      .stat-card-narrow { max-width: 220px; }
+
+      /* ── Desktop: sidebar always visible ── */
+      @media (min-width: 992px) {
+        .navbar-vertical {
+          width: 256px !important;
+          min-width: 256px !important;
+          position: relative !important;
+          top: auto !important;
+          bottom: auto !important;
+          left: auto !important;
+        }
+        .navbar-vertical .container-fluid {
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+        }
+        .navbar-vertical .nav-link-title {
+          opacity: 1;
+          white-space: nowrap;
+          pointer-events: auto;
+          width: auto;
+        }
+        .navbar-vertical .nav-link {
+          justify-content: start;
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+        }
+        .navbar-vertical .nav-link-icon {
+          margin-right: 0.5rem;
+          width: 24px;
+          min-width: 24px;
+          text-align: center;
+        }
+        .navbar-vertical .nav-category {
+          opacity: 1;
+          height: auto;
+          padding: 0.6rem 0.75rem 0.25rem;
+        }
+        .navbar-vertical .nav-item + .nav-category,
+        .navbar-vertical .nav-category + .nav-category {
+          margin-top: 0.4rem;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          padding-top: 0.65rem;
+        }
+        .navbar-vertical .nav-category:first-child {
+          padding-top: 0;
+        }
+        /* Hide mobile burger button on desktop */
+        .mobile-menu-toggle {
+          display: none !important;
+        }
+        .page-wrapper {
+          padding-left: 0.75rem;
+        }
+      }
+
+      /* ── Mobile: off-canvas sidebar ── */
+      @media (max-width: 991.98px) {
+        aside.navbar-vertical {
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          width: 280px !important;
+          max-width: 85vw;
+          z-index: 1050;
+          transform: translateX(-100%);
+          transition: transform 0.3s ease;
+          overflow-y: auto;
+          padding-top: 3.5rem;
+        }
+        aside.navbar-vertical.mobile-open {
+          transform: translateX(0);
+        }
+        aside.navbar-vertical .navbar-collapse {
+          display: flex !important;
+          flex-direction: column;
+          padding: 0.5rem 0;
+        }
+        aside.navbar-vertical .container-fluid {
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+        }
+        aside.navbar-vertical .nav-link-title {
+          opacity: 1;
+          pointer-events: auto;
+          width: auto;
+        }
+        aside.navbar-vertical .nav-link {
+          justify-content: start;
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+        }
+        aside.navbar-vertical .nav-link-icon {
+          margin-right: 0.5rem;
+        }
+        aside.navbar-vertical .nav-category {
+          opacity: 1;
+          height: auto;
+          padding: 0.6rem 0.75rem 0.25rem;
+        }
+        /* Backdrop overlay */
+        .mobile-sidebar-backdrop {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.5);
+          z-index: 1040;
+        }
+        .mobile-sidebar-backdrop.show {
+          display: block;
+        }
+        /* Mobile burger button */
+        .mobile-menu-toggle {
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.10);
+          color: #8fa8c8;
+          border-radius: 6px;
+          width: 30px;
+          height: 30px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          padding: 0;
+        }
+        .mobile-menu-toggle:hover {
+          background: rgba(255,255,255,0.16);
+          color: #fff;
+        }
+        .mobile-menu-toggle .ti {
+          font-size: 1rem;
+          margin: 0;
+        }
+      }
+
+      /* ── Sidebar category headers ── */
+      .nav-category {
+        display: block;
+        padding: 0.6rem 0.75rem 0.25rem;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(138, 166, 200, 0.55);
+        white-space: nowrap;
+        user-select: none;
+        pointer-events: none;
+      }
+      .nav-category:first-child {
+        padding-top: 0;
+      }
+      /* Show a subtle divider line above categories (except the first) */
+      .nav-category + .nav-category,
+      .nav-item + .nav-category {
+        margin-top: 0.4rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding-top: 0.65rem;
+      }
+
+      /* ── Avatar in dropdown ── */
+      .avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+    </style>
+    <!-- Tabler CSS (self-hosted to prevent FOUC) -->
+    <link rel="stylesheet" href="/static/css/tabler.min.css">
+    <link rel="stylesheet" href="/static/css/tabler-icons.min.css">
+  </head>
+  <body class="layout-fluid">
+    <div class="page">
+    <!-- ═══ FULL-WIDTH TOP HEADER ═══ -->
+    <header class="navbar d-print-none keywarden-top-header" data-bs-theme="dark">
+      <div class="container-fluid px-3">
+        <div class="d-flex align-items-center w-100">
+          <!-- Logo + Brand (left side, aligned with sidebar) -->
+          <div class="keywarden-header-brand">
+            <button class="mobile-menu-toggle d-lg-none" onclick="toggleMobileMenu()" title="Menü" id="mobile-menu-btn">
+              <i class="ti ti-menu-2" id="mobile-menu-icon"></i>
+            </button>
+            <a href="/dashboard" class="keywarden-brand text-decoration-none d-flex align-items-center">
+              <i class="ti ti-key"></i> {{appName}}
+            </a>
+          </div>
+          <!-- Spacer -->
+          <div class="flex-grow-1"></div>
+          <!-- Repository Link -->
+          <div class="nav-item d-none d-md-flex me-2">
+            <a href="https://git.techniverse.net/scriptos/keywarden" class="btn btn-header-modern btn-sm" target="_blank" rel="noopener noreferrer" title="Source code on Gitea">
+              <i class="ti ti-brand-git"></i> Repository
+            </a>
+          </div>
+          <!-- Documentation -->
+          <div class="nav-item d-none d-md-flex me-2">
+            <a href="https://git.techniverse.net/scriptos/keywarden/src/branch/master/docs" class="btn btn-header-modern btn-sm" target="_blank" rel="noopener noreferrer" title="Documentation">
+              <i class="ti ti-book"></i> Docs
+            </a>
+          </div>
+          <!-- Theme Toggle -->
+          <div class="nav-item d-flex me-2">
+            <button id="theme-toggle" class="btn btn-header-modern btn-sm btn-icon" title="Toggle theme" onclick="toggleTheme()">
+              <i class="ti ti-sun" id="theme-icon"></i>
+            </button>
+          </div>
+          <!-- User Badge -->
+          {{with .User}}
+          <div class="nav-item dropdown">
+            <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
+              <span class="avatar avatar-sm rounded-circle bg-primary-lt">
+                {{if .AvatarBase64}}
+                <img src="/avatar/{{.ID}}" class="avatar-img" alt="Avatar">
+                {{else}}
+                <i class="ti ti-user" style="font-size: 1.1rem;"></i>
+                {{end}}
+              </span>
+              <div class="d-none d-xl-block ps-2">
+                <div class="fw-bold">{{.Username}}</div>
+                <div class="mt-1 small text-secondary">{{if eq .Role "owner"}}Owner{{else if eq .Role "admin"}}Administrator{{else}}User{{end}}</div>
+              </div>
+            </a>
+            <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+              <a class="dropdown-item text-danger" href="/logout">
+                <i class="ti ti-logout"></i> Logout
+              </a>
+            </div>
+          </div>
+          {{end}}
+        </div>
+      </div>
+    </header>
+    <!-- ═══ CONTENT ROW: sidebar + main ═══ -->
+    <div class="page-content-row">
+      <!-- Mobile sidebar backdrop -->
+      <div class="mobile-sidebar-backdrop" id="mobile-sidebar-backdrop" onclick="closeMobileMenu()"></div>
+      <!-- Sidebar -->
+      <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark" id="keywarden-sidebar">
+        <div class="container-fluid">
+          <div class="collapse navbar-collapse" id="sidebar-menu">
+            <ul class="navbar-nav pt-lg-3">
+              <!-- ── Overview ── -->
+              <li class="nav-category">Overview</li>
+              <li class="nav-item{{if eq .Active "dashboard"}} active{{end}}">
+                <a class="nav-link" href="/dashboard">
+                  <span class="nav-link-icon"><i class="ti ti-dashboard"></i></span>
+                  <span class="nav-link-title">Dashboard</span>
+                </a>
+              </li>
+              <!-- ── Infrastructure (Admin/Owner only) ── -->
+              {{with .User}}
+              {{if or (eq .Role "admin") (eq .Role "owner")}}
+              <li class="nav-category">Infrastructure</li>
+              <li class="nav-item{{if eq $.Active "servers"}} active{{end}}">
+                <a class="nav-link" href="/servers">
+                  <span class="nav-link-icon"><i class="ti ti-server"></i></span>
+                  <span class="nav-link-title">Hosts</span>
+                </a>
+              </li>
+              <li class="nav-item{{if eq $.Active "groups"}} active{{end}}">
+                <a class="nav-link" href="/groups">
+                  <span class="nav-link-icon"><i class="ti ti-folders"></i></span>
+                  <span class="nav-link-title">Groups</span>
+                </a>
+              </li>
+              {{end}}
+              {{end}}
+              <!-- ── Key Management ── -->
+              <li class="nav-category">Key Management</li>
+              <li class="nav-item{{if eq .Active "keys"}} active{{end}}">
+                <a class="nav-link" href="/keys">
+                  <span class="nav-link-icon"><i class="ti ti-key"></i></span>
+                  <span class="nav-link-title">SSH Keys</span>
+                </a>
+              </li>
+              <!-- My Access (visible to all users) -->
+              <li class="nav-item{{if eq .Active "my_access"}} active{{end}}">
+                <a class="nav-link" href="/my/access">
+                  <span class="nav-link-icon"><i class="ti ti-shield-check"></i></span>
+                  <span class="nav-link-title">My Access</span>
+                </a>
+              </li>
+              {{with .User}}
+              {{if or (eq .Role "admin") (eq .Role "owner")}}
+              <li class="nav-item{{if eq $.Active "deploy"}} active{{end}}">
+                <a class="nav-link" href="/deploy">
+                  <span class="nav-link-icon"><i class="ti ti-send"></i></span>
+                  <span class="nav-link-title">Deploy Keys</span>
+                </a>
+              </li>
+              {{end}}
+              {{end}}
+              <!-- ── Operations (Admin/Owner only) ── -->
+              {{with .User}}
+              {{if or (eq .Role "admin") (eq .Role "owner")}}
+              <li class="nav-category">Operations</li>
+              <li class="nav-item{{if eq $.Active "cron"}} active{{end}}">
+                <a class="nav-link" href="/cron">
+                  <span class="nav-link-icon"><i class="ti ti-clock"></i></span>
+                  <span class="nav-link-title">Temporary Access</span>
+                </a>
+              </li>
+              {{end}}
+              {{end}}
+              <li class="nav-item{{if eq .Active "audit"}} active{{end}}">
+                <a class="nav-link" href="/audit">
+                  <span class="nav-link-icon"><i class="ti ti-list-details"></i></span>
+                  <span class="nav-link-title">Audit Log</span>
+                </a>
+              </li>
+              <!-- ── Administration ── -->
+              <li class="nav-category">Administration</li>
+              {{with .User}}
+              {{if or (eq .Role "admin") (eq .Role "owner")}}
+              <li class="nav-item{{if eq $.Active "users"}} active{{end}}">
+                <a class="nav-link" href="/users">
+                  <span class="nav-link-icon"><i class="ti ti-users"></i></span>
+                  <span class="nav-link-title">Users</span>
+                </a>
+              </li>
+              <li class="nav-item{{if eq $.Active "assignments"}} active{{end}}">
+                <a class="nav-link" href="/assignments">
+                  <span class="nav-link-icon"><i class="ti ti-shield-lock"></i></span>
+                  <span class="nav-link-title">Access Assignments</span>
+                </a>
+              </li>
+              {{end}}
+              {{end}}
+              <li class="nav-item{{if eq .Active "settings"}} active{{end}}">
+                <a class="nav-link" href="/settings">
+                  <span class="nav-link-icon"><i class="ti ti-settings"></i></span>
+                  <span class="nav-link-title">Settings</span>
+                </a>
+              </li>
+              {{with .User}}
+              {{if eq .Role "owner"}}
+              <li class="nav-item{{if eq $.Active "admin_settings"}} active{{end}}">
+                <a class="nav-link" href="/admin/settings">
+                  <span class="nav-link-icon"><i class="ti ti-shield-cog"></i></span>
+                  <span class="nav-link-title">Admin Settings</span>
+                </a>
+              </li>
+              {{end}}
+              {{end}}
+              <!-- ── System (Admin/Owner only) ── -->
+              {{with .User}}
+              {{if or (eq .Role "admin") (eq .Role "owner")}}
+              <li class="nav-category">System</li>
+              <li class="nav-item{{if eq $.Active "system_info"}} active{{end}}">
+                <a class="nav-link" href="/system">
+                  <span class="nav-link-icon"><i class="ti ti-info-circle"></i></span>
+                  <span class="nav-link-title">System Information</span>
+                </a>
+              </li>
+              {{end}}
+              {{end}}
+            </ul>
+          </div>
+        </div>
+      </aside>
+      <!-- Main content -->
+      <div class="page-wrapper">
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="page-pretitle">Keywarden – Centralized SSH Key Management and Deployment</div>
+            <h2 class="page-title">{{.Title}}</h2>
+          </div>
+        </div>
+        <div class="page-body">
+          <div class="container-xl">
+            {{if .Flash}}
+            <div class="alert alert-{{.Flash.Type}} alert-dismissible" role="alert">
+              <div class="d-flex">
+                <div>
+                  {{if eq .Flash.Type "success"}}<i class="ti ti-check icon alert-icon"></i>{{end}}
+                  {{if eq .Flash.Type "danger"}}<i class="ti ti-alert-circle icon alert-icon"></i>{{end}}
+                  {{if eq .Flash.Type "warning"}}<i class="ti ti-alert-triangle icon alert-icon"></i>{{end}}
+                </div>
+                <div>{{.Flash.Message}}</div>
+              </div>
+              <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+            </div>
+            {{end}}
+            {{template "content" .}}
+          </div>
+        </div>
+        <footer class="footer footer-transparent d-print-none">
+          <div class="container-xl">
+            <div class="row text-center align-items-center">
+              <div class="col-12">
+                <span class="text-secondary">&copy; 2026 Keywarden – Centralized SSH Key Management and Deployment | AGPLv3</span>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div><!-- /page-content-row -->
+    </div><!-- /page -->
+    <!-- Tabler JS (self-hosted) -->
+    <script src="/static/js/tabler.min.js"></script>
+    <script>
+    // --- Theme Toggle ---
+    function getResolvedTheme() {
+      var stored = document.documentElement.getAttribute('data-bs-theme');
+      return stored || 'light';
+    }
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-bs-theme', theme);
+      document.documentElement.style.colorScheme = theme;
+      updateThemeIcon(theme);
+    }
+    function updateThemeIcon(theme) {
+      var icon = document.getElementById('theme-icon');
+      if (!icon) return;
+      icon.className = theme === 'dark' ? 'ti ti-moon' : 'ti ti-sun';
+    }
+    function toggleTheme() {
+      var current = getResolvedTheme();
+      var next = current === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      // Persist choice via API (fire-and-forget)
+      var csrf = (document.cookie.match(/(?:^|;\s*)_csrf=([^;]*)/) || [])[1] || '';
+      fetch('/settings/theme', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'theme=' + encodeURIComponent(next) + '&_csrf=' + encodeURIComponent(csrf)
+      });
+    }
+    // Set initial icon on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      updateThemeIcon(getResolvedTheme());
+    });
+
+    // --- Mobile Sidebar Toggle ---
+    function toggleMobileMenu() {
+      var sidebar = document.getElementById('keywarden-sidebar');
+      var backdrop = document.getElementById('mobile-sidebar-backdrop');
+      var icon = document.getElementById('mobile-menu-icon');
+      if (!sidebar) return;
+      var isOpen = sidebar.classList.toggle('mobile-open');
+      if (backdrop) backdrop.classList.toggle('show', isOpen);
+      if (icon) icon.className = isOpen ? 'ti ti-x' : 'ti ti-menu-2';
+    }
+    function closeMobileMenu() {
+      var sidebar = document.getElementById('keywarden-sidebar');
+      var backdrop = document.getElementById('mobile-sidebar-backdrop');
+      var icon = document.getElementById('mobile-menu-icon');
+      if (sidebar) sidebar.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('show');
+      if (icon) icon.className = 'ti ti-menu-2';
+    }
+
+    function copyToClipboard(elementId, btn) {
+      var el = document.getElementById(elementId);
+      var text = el.value || el.textContent;
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+          showCopyFeedback(btn);
+        });
+      } else {
+        // Fallback for non-HTTPS: use temporary textarea (password inputs block select/copy)
+        var tmp = document.createElement('textarea');
+        tmp.value = text;
+        tmp.style.position = 'fixed';
+        tmp.style.opacity = '0';
+        document.body.appendChild(tmp);
+        tmp.focus();
+        tmp.select();
+        tmp.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        document.body.removeChild(tmp);
+        showCopyFeedback(btn);
+      }
+    }
+    function showCopyFeedback(btn) {
+      var orig = btn.innerHTML;
+      btn.innerHTML = '<i class="ti ti-check"></i>';
+      btn.classList.add('btn-success');
+      btn.classList.remove('btn-outline-primary');
+      setTimeout(function() {
+        btn.innerHTML = orig;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-primary');
+      }, 2000);
+    }
+
+    // --- CSRF Protection ---
+    // Reads the _csrf cookie and injects a hidden field into every POST form.
+    // Also provides a helper for fetch/AJAX calls.
+    (function() {
+      function getCsrfToken() {
+        var m = document.cookie.match(/(?:^|;\s*)_csrf=([^;]*)/);
+        return m ? decodeURIComponent(m[1]) : '';
+      }
+      // Inject hidden _csrf field into all POST forms
+      document.querySelectorAll('form').forEach(function(form) {
+        if ((form.method || 'get').toLowerCase() === 'post' && !form.querySelector('input[name="_csrf"]')) {
+          var input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = '_csrf';
+          input.value = getCsrfToken();
+          form.prepend(input);
+        }
+      });
+      // Expose globally for fetch/AJAX calls
+      window._csrfToken = getCsrfToken;
+    })();
+    </script>
+  </body>
+</html>
+{{end}}

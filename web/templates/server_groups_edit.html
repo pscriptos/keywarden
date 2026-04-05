@@ -1,0 +1,110 @@
+{{define "content"}}
+<div class="row row-cards">
+  <!-- Edit Group Info -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-edit"></i> Edit Group</h3>
+      </div>
+      <div class="card-body">
+        {{$group := .Group}}
+        <form action="/groups/{{$group.ID}}/edit" method="POST">
+          <div class="mb-3">
+            <label class="form-label required">Group Name</label>
+            <input type="text" name="name" class="form-control" value="{{$group.Name}}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="2">{{$group.Description}}</textarea>
+          </div>
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-device-floppy"></i> Save Changes
+            </button>
+            <a href="/groups" class="btn btn-outline-secondary ms-2">Back</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Server to Group -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-server"></i> Add Host to Group</h3>
+      </div>
+      <div class="card-body">
+        <form action="/groups/{{$group.ID}}/add-server" method="POST">
+          <div class="mb-3">
+            <label class="form-label required">Select Host</label>
+            <select name="server_id" class="form-select" required>
+              <option value="">Choose a host...</option>
+              {{range .AllServers}}
+              <option value="{{.ID}}">{{.Name}} ({{.Hostname}}:{{.Port}})</option>
+              {{end}}
+            </select>
+          </div>
+          <div class="form-footer">
+            <button type="submit" class="btn btn-success">
+              <i class="ti ti-plus"></i> Add Host
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Members -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-list"></i> Hosts in this Group</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Host</th>
+              <th>Port</th>
+              <th>User</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .GroupServers}}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="ti ti-server me-2 text-primary"></i>
+                  <strong>{{.Name}}</strong>
+                </div>
+              </td>
+              <td><code>{{.Hostname}}</code></td>
+              <td>{{.Port}}</td>
+              <td>{{.Username}}</td>
+              <td>
+                <form method="POST" action="/groups/{{$group.ID}}/remove-server" class="d-inline" onsubmit="return confirm('Remove this host from the group?')">
+                  <input type="hidden" name="server_id" value="{{.ID}}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove from Group">
+                    <i class="ti ti-x"></i> Remove
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="5" class="text-center text-secondary py-4">
+                <i class="ti ti-server-off" style="font-size: 2rem;"></i>
+                <p class="mt-2">No hosts in this group yet. Add hosts above.</p>
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,277 @@
+{{define "content"}}
+<div class="row row-cards">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-send"></i> Deploy SSH Key</h3>
+      </div>
+      <div class="card-body">
+        <!-- Step 1: Target Type -->
+        <div class="mb-4">
+          <label class="form-label required">
+            <span class="badge bg-blue-lt me-1">1</span> Deploy Target
+          </label>
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-selectgroup-item w-100" style="cursor:pointer;">
+                <input type="radio" name="deploy_target" value="host" class="form-selectgroup-input" id="target-host">
+                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                  <div class="me-3"><i class="ti ti-server fs-2"></i></div>
+                  <div>
+                    <strong>Single Host</strong>
+                    <div class="text-secondary">Deploy to one server</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+            <div class="col-6">
+              <label class="form-selectgroup-item w-100" style="cursor:pointer;">
+                <input type="radio" name="deploy_target" value="group" class="form-selectgroup-input" id="target-group">
+                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                  <div class="me-3"><i class="ti ti-folders fs-2"></i></div>
+                  <div>
+                    <strong>Server Group</strong>
+                    <div class="text-secondary">Deploy to all servers in a group</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Steps 2-4 (hidden until target is chosen) -->
+        <div id="deploy-details" style="display:none;">
+
+          <!-- Host form (POST to /deploy) -->
+          <form action="/deploy" method="POST" id="form-host" style="display:none;">
+            <!-- Step 2: Key -->
+            <div class="mb-3">
+              <label class="form-label required">
+                <span class="badge bg-blue-lt me-1">2</span> SSH Key
+              </label>
+              <select name="key_id" class="form-select" required>
+                <option value="">Choose a key...</option>
+                {{range .Keys}}
+                <option value="{{.ID}}">{{.Name}} ({{.KeyType}})</option>
+                {{end}}
+              </select>
+            </div>
+            <!-- Step 3: Host -->
+            <div class="mb-3">
+              <label class="form-label required">
+                <span class="badge bg-blue-lt me-1">3</span> Target Host
+              </label>
+              <select name="server_id" class="form-select" required>
+                <option value="">Choose a host...</option>
+                {{range .Servers}}
+                <option value="{{.ID}}">{{.Name}} ({{.Hostname}}:{{.Port}})</option>
+                {{end}}
+              </select>
+            </div>
+            <!-- Step 4: Auth -->
+            <div class="mb-3">
+              <label class="form-label required">
+                <span class="badge bg-blue-lt me-1">4</span> Authentication Method
+              </label>
+              <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+                <label class="form-selectgroup-item flex-fill">
+                  <input type="radio" name="auth_method" value="password" class="form-selectgroup-input host-auth" checked>
+                  <div class="form-selectgroup-label d-flex align-items-center p-3">
+                    <div class="me-3"><i class="ti ti-lock"></i></div>
+                    <div>
+                      <strong>Password</strong>
+                      <div class="text-secondary">Use SSH password to authenticate</div>
+                    </div>
+                  </div>
+                </label>
+                <label class="form-selectgroup-item flex-fill">
+                  <input type="radio" name="auth_method" value="key" class="form-selectgroup-input host-auth">
+                  <div class="form-selectgroup-label d-flex align-items-center p-3">
+                    <div class="me-3"><i class="ti ti-key"></i></div>
+                    <div>
+                      <strong>Existing Key</strong>
+                      <div class="text-secondary">Use an existing key from Keywarden to authenticate</div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div class="mb-3" id="host-password-group">
+              <label class="form-label">SSH Password</label>
+              <input type="password" name="password" class="form-control" placeholder="Server password">
+            </div>
+            <div class="mb-3" id="host-authkey-group" style="display:none;">
+              <label class="form-label">Authentication Key</label>
+              <select name="auth_key_id" class="form-select">
+                <option value="">Choose a key for auth...</option>
+                {{range .Keys}}
+                <option value="{{.ID}}">{{.Name}} ({{.KeyType}})</option>
+                {{end}}
+              </select>
+            </div>
+            <div class="form-footer">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="ti ti-send"></i> Deploy Key to Host
+              </button>
+            </div>
+          </form>
+
+          <!-- Group form (POST to /deploy/group) -->
+          <form action="/deploy/group" method="POST" id="form-group" style="display:none;">
+            <!-- Step 2: Key -->
+            <div class="mb-3">
+              <label class="form-label required">
+                <span class="badge bg-blue-lt me-1">2</span> SSH Key
+              </label>
+              <select name="key_id" class="form-select" required>
+                <option value="">Choose a key...</option>
+                {{range .Keys}}
+                <option value="{{.ID}}">{{.Name}} ({{.KeyType}})</option>
+                {{end}}
+              </select>
+            </div>
+            <!-- Step 3: Group -->
+            <div class="mb-3">
+              <label class="form-label required">
+                <span class="badge bg-blue-lt me-1">3</span> Target Group
+              </label>
+              <select name="group_id" class="form-select" required>
+                <option value="">Choose a group...</option>
+                {{range .Groups}}
+                <option value="{{.ID}}">{{.Name}} ({{.ServerCount}} server{{if ne .ServerCount 1}}s{{end}})</option>
+                {{end}}
+              </select>
+            </div>
+            <!-- Step 4: Auth -->
+            <div class="mb-3">
+              <label class="form-label required">
+                <span class="badge bg-blue-lt me-1">4</span> Authentication Method
+              </label>
+              <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+                <label class="form-selectgroup-item flex-fill">
+                  <input type="radio" name="auth_method" value="password" class="form-selectgroup-input grp-auth" checked>
+                  <div class="form-selectgroup-label d-flex align-items-center p-3">
+                    <div class="me-3"><i class="ti ti-lock"></i></div>
+                    <div>
+                      <strong>Password</strong>
+                      <div class="text-secondary">Same password for all hosts in group</div>
+                    </div>
+                  </div>
+                </label>
+                <label class="form-selectgroup-item flex-fill">
+                  <input type="radio" name="auth_method" value="key" class="form-selectgroup-input grp-auth">
+                  <div class="form-selectgroup-label d-flex align-items-center p-3">
+                    <div class="me-3"><i class="ti ti-key"></i></div>
+                    <div>
+                      <strong>Existing Key</strong>
+                      <div class="text-secondary">Use an existing key from Keywarden</div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div class="mb-3" id="grp-password-group">
+              <label class="form-label">SSH Password</label>
+              <input type="password" name="password" class="form-control" placeholder="Server password">
+            </div>
+            <div class="mb-3" id="grp-authkey-group" style="display:none;">
+              <label class="form-label">Authentication Key</label>
+              <select name="auth_key_id" class="form-select">
+                <option value="">Choose a key for auth...</option>
+                {{range .Keys}}
+                <option value="{{.ID}}">{{.Name}} ({{.KeyType}})</option>
+                {{end}}
+              </select>
+            </div>
+            <div class="form-footer">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="ti ti-send"></i> Deploy Key to Group
+              </button>
+            </div>
+          </form>
+
+        </div><!-- /deploy-details -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Deployment History -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-history"></i> Deployment History</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Server</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Deployments}}
+            <tr>
+              <td>{{index . "key_name"}}</td>
+              <td>{{index . "server_name"}}</td>
+              <td>
+                {{if eq (index . "status") "success"}}
+                <span class="badge bg-success-lt"><i class="ti ti-check"></i> Success</span>
+                {{else}}
+                <span class="badge bg-danger-lt"><i class="ti ti-x"></i> Failed</span>
+                {{end}}
+              </td>
+              <td>{{index . "deployed_at"}}</td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="4" class="text-center text-secondary">No deployments yet.</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var details = document.getElementById('deploy-details');
+  var formHost = document.getElementById('form-host');
+  var formGroup = document.getElementById('form-group');
+
+  // Step 1: Target selection
+  document.querySelectorAll('input[name="deploy_target"]').forEach(function(el) {
+    el.addEventListener('change', function() {
+      details.style.display = 'block';
+      if (this.value === 'host') {
+        formHost.style.display = 'block';
+        formGroup.style.display = 'none';
+      } else {
+        formHost.style.display = 'none';
+        formGroup.style.display = 'block';
+      }
+    });
+  });
+
+  // Host auth toggle
+  document.querySelectorAll('.host-auth').forEach(function(el) {
+    el.addEventListener('change', function() {
+      document.getElementById('host-password-group').style.display = this.value === 'password' ? 'block' : 'none';
+      document.getElementById('host-authkey-group').style.display = this.value === 'key' ? 'block' : 'none';
+    });
+  });
+
+  // Group auth toggle
+  document.querySelectorAll('.grp-auth').forEach(function(el) {
+    el.addEventListener('change', function() {
+      document.getElementById('grp-password-group').style.display = this.value === 'password' ? 'block' : 'none';
+      document.getElementById('grp-authkey-group').style.display = this.value === 'key' ? 'block' : 'none';
+    });
+  });
+})();
+</script>
+{{end}}

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <title>Login - {{appName}}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <!-- Preload icon font to prevent re-decode lag on tab restore -->
+    <link rel="preload" href="/static/css/fonts/tabler-icons.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Resolve theme BEFORE loading CSS to prevent FOUC (flash of unstyled content) -->
+    <script>
+      (function() {
+        var resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-bs-theme', resolved);
+        document.documentElement.style.colorScheme = resolved;
+      })();
+    </script>
+    <style>
+      /* Critical inline styles: prevent white flash between page navigations */
+      html[data-bs-theme="dark"],
+      html[data-bs-theme="dark"] body { background-color: #1a2234; color-scheme: dark; }
+      html[data-bs-theme="light"],
+      html[data-bs-theme="light"] body { background-color: #f1f5f9; color-scheme: light; }
+      /* Text selection colors */
+      [data-bs-theme="dark"] ::selection { background: #3d6098; color: #f0f4f8; }
+      [data-bs-theme="dark"] ::-moz-selection { background: #3d6098; color: #f0f4f8; }
+      [data-bs-theme="light"] ::selection { background: #b3d4fc; color: #1a1a1a; }
+      [data-bs-theme="light"] ::-moz-selection { background: #b3d4fc; color: #1a1a1a; }
+    </style>
+    <!-- Tabler CSS (self-hosted to prevent FOUC) -->
+    <link rel="stylesheet" href="/static/css/tabler.min.css">
+    <link rel="stylesheet" href="/static/css/tabler-icons.min.css">
+  </head>
+  <body class="d-flex flex-column">
+    <div class="page page-center">
+      <div class="container container-tight py-4">
+        <div class="text-center mb-4">
+          <h1><i class="ti ti-key"></i> {{appName}}</h1>
+          <p class="text-secondary">Centralized SSH Key Management and Deployment</p>
+        </div>
+        <div class="card card-md">
+          <div class="card-body">
+            {{if .MFAPending}}
+            <!-- MFA Verification Step -->
+            <h2 class="h2 text-center mb-4">
+              <i class="ti ti-shield-lock"></i> MFA Verification
+            </h2>
+            {{if .Error}}
+            <div class="alert alert-danger">
+              <i class="ti ti-alert-circle"></i> {{.Error}}
+            </div>
+            {{end}}
+            <p class="text-secondary text-center mb-3">Enter the 6-digit code from your authenticator app.</p>
+            <form action="/login/mfa" method="post" autocomplete="off">
+              <input type="hidden" name="mfa_token" value="{{.MFAToken}}">
+              <div class="mb-3">
+                <label class="form-label">MFA Code</label>
+                <div class="input-icon">
+                  <span class="input-icon-addon"><i class="ti ti-shield-lock"></i></span>
+                  <input type="text" name="mfa_code" class="form-control" placeholder="000000" 
+                         required pattern="[0-9]{6}" maxlength="6" autofocus
+                         style="font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center;">
+                </div>
+              </div>
+              <div class="form-footer">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="ti ti-shield-check"></i> Verify
+                </button>
+              </div>
+            </form>
+            <div class="text-center mt-3">
+              <a href="/login" class="text-secondary"><i class="ti ti-arrow-left"></i> Back to login</a>
+            </div>
+            {{else}}
+            <!-- Normal Login -->
+            <h2 class="h2 text-center mb-4">Login</h2>
+            {{if .Error}}
+            <div class="alert alert-danger">
+              <i class="ti ti-alert-circle"></i> {{.Error}}
+            </div>
+            {{end}}
+            <form action="/login" method="post" autocomplete="off">
+              <div class="mb-3">
+                <label class="form-label">Username</label>
+                <div class="input-icon">
+                  <span class="input-icon-addon"><i class="ti ti-user"></i></span>
+                  <input type="text" name="username" class="form-control" placeholder="Username" required autofocus>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Password</label>
+                <div class="input-icon">
+                  <span class="input-icon-addon"><i class="ti ti-lock"></i></span>
+                  <input type="password" name="password" class="form-control" placeholder="Password" required>
+                </div>
+              </div>
+              <div class="form-footer">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="ti ti-login"></i> Sign in
+                </button>
+              </div>
+            </form>
+            {{end}}
+          </div>
+        </div>
+        <div class="text-center text-secondary mt-3">
+          &copy; 2026 Keywarden | AGPLv3
+        </div>
+      </div>
+    </div>
+    <script src="/static/js/tabler.min.js"></script>
+    <script>
+    // --- CSRF Protection ---
+    (function() {
+      var m = document.cookie.match(/(?:^|;\s*)_csrf=([^;]*)/);
+      var token = m ? decodeURIComponent(m[1]) : '';
+      document.querySelectorAll('form').forEach(function(form) {
+        if ((form.method || 'get').toLowerCase() === 'post' && !form.querySelector('input[name="_csrf"]')) {
+          var input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = '_csrf';
+          input.value = token;
+          form.prepend(input);
+        }
+      });
+    })();
+    </script>
+  </body>
+</html>

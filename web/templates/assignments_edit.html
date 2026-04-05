@@ -1,0 +1,154 @@
+{{define "content"}}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-edit"></i> Edit Access Assignment #{{.Assignment.ID}}</h3>
+      </div>
+      <div class="card-body">
+        <form action="/assignments/{{.Assignment.ID}}/edit" method="POST" id="assignment-form">
+          <!-- User Selection -->
+          <div class="mb-3">
+            <label class="form-label required">User</label>
+            <select name="user_id" id="user-select" class="form-select" required>
+              <option value="">– Select user –</option>
+              {{range .AssignAllUsers}}
+              <option value="{{.ID}}" {{if eq .ID $.Assignment.UserID}}selected{{end}}>{{.Username}} ({{.Email}})</option>
+              {{end}}
+            </select>
+          </div>
+
+          <!-- SSH Key Selection -->
+          <div class="mb-3">
+            <label class="form-label required">SSH Key</label>
+            <select name="ssh_key_id" id="key-select" class="form-select" required>
+              <option value="">– Select key –</option>
+            </select>
+            <small class="form-hint">Only keys of the selected user are shown.</small>
+          </div>
+
+          <!-- Target Type -->
+          <div class="mb-3">
+            <label class="form-label required">Target Type</label>
+            <div class="form-selectgroup">
+              <label class="form-selectgroup-item">
+                <input type="radio" name="target_type" value="host" class="form-selectgroup-input" {{if gt .Assignment.ServerID 0}}checked{{end}}{{if and (eq .Assignment.ServerID 0) (eq .Assignment.GroupID 0)}}checked{{end}} onchange="toggleTarget()">
+                <span class="form-selectgroup-label"><i class="ti ti-server"></i> Single Host</span>
+              </label>
+              <label class="form-selectgroup-item">
+                <input type="radio" name="target_type" value="group" class="form-selectgroup-input" {{if gt .Assignment.GroupID 0}}checked{{end}} onchange="toggleTarget()">
+                <span class="form-selectgroup-label"><i class="ti ti-folders"></i> Host Group</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Host Selection -->
+          <div class="mb-3{{if gt .Assignment.GroupID 0}} d-none{{end}}" id="host-section">
+            <label class="form-label required">Host</label>
+            <select name="server_id" id="server-select" class="form-select">
+              <option value="">– Select host –</option>
+              {{range .AssignAllHosts}}
+              <option value="{{.ID}}" {{if eq .ID $.Assignment.ServerID}}selected{{end}}>{{.Name}} ({{.Hostname}}:{{.Port}})</option>
+              {{end}}
+            </select>
+          </div>
+
+          <!-- Group Selection -->
+          <div class="mb-3{{if not (gt .Assignment.GroupID 0)}} d-none{{end}}" id="group-section">
+            <label class="form-label required">Host Group</label>
+            <select name="group_id" id="group-select" class="form-select">
+              <option value="">– Select group –</option>
+              {{range .AssignAllGroups}}
+              <option value="{{.ID}}" {{if eq .ID $.Assignment.GroupID}}selected{{end}}>{{.Name}} ({{.ServerCount}} hosts)</option>
+              {{end}}
+            </select>
+          </div>
+
+          <!-- System User -->
+          <div class="mb-3">
+            <label class="form-label required">System User</label>
+            <input type="text" name="system_user" class="form-control" value="{{.Assignment.SystemUser}}" required>
+            <small class="form-hint">The user account on the target host under which the key will be deployed.</small>
+          </div>
+
+          <!-- Desired State -->
+          <div class="mb-3">
+            <label class="form-label required">Desired State</label>
+            <select name="desired_state" class="form-select">
+              <option value="present" {{if eq .Assignment.DesiredState "present"}}selected{{end}}>Present – Key should be deployed</option>
+              <option value="absent" {{if eq .Assignment.DesiredState "absent"}}selected{{end}}>Absent – Key should be removed</option>
+            </select>
+          </div>
+
+          <!-- Options -->
+          <div class="mb-3">
+            <label class="form-label">Options</label>
+            <div>
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="sudo" {{if .Assignment.Sudo}}checked{{end}}>
+                <span class="form-check-label">Grant sudo rights to the system user</span>
+              </label>
+            </div>
+            <div class="mt-2">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="create_user" {{if .Assignment.CreateUser}}checked{{end}}>
+                <span class="form-check-label">Create system user on target host if it doesn't exist</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-device-floppy"></i> Save Changes
+            </button>
+            <a href="/assignments" class="btn btn-outline-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Key data grouped by user ID
+var keysByUser = {};
+{{range .AssignAllKeys}}
+if (!keysByUser[{{.UserID}}]) keysByUser[{{.UserID}}] = [];
+keysByUser[{{.UserID}}].push({id: {{.ID}}, name: "{{.Name}}", type: "{{.KeyType}}"});
+{{end}}
+
+var preselectedKeyID = {{.Assignment.SSHKeyID}};
+
+function populateKeys(uid, selectedKeyID) {
+  var keySelect = document.getElementById('key-select');
+  keySelect.innerHTML = '<option value="">– Select key –</option>';
+  if (uid && keysByUser[uid]) {
+    keysByUser[uid].forEach(function(k) {
+      var opt = document.createElement('option');
+      opt.value = k.id;
+      opt.textContent = k.name + ' (' + k.type + ')';
+      if (k.id == selectedKeyID) opt.selected = true;
+      keySelect.appendChild(opt);
+    });
+  }
+}
+
+document.getElementById('user-select').addEventListener('change', function() {
+  populateKeys(this.value, 0);
+});
+
+// Initialize on page load with pre-selected values
+(function() {
+  var userSelect = document.getElementById('user-select');
+  if (userSelect.value) {
+    populateKeys(userSelect.value, preselectedKeyID);
+  }
+})();
+
+function toggleTarget() {
+  var isHost = document.querySelector('input[name="target_type"][value="host"]').checked;
+  document.getElementById('host-section').classList.toggle('d-none', !isHost);
+  document.getElementById('group-section').classList.toggle('d-none', isHost);
+}
+</script>
+{{end}}

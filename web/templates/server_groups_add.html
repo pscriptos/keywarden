@@ -1,0 +1,29 @@
+{{define "content"}}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-plus"></i> Create Group</h3>
+      </div>
+      <div class="card-body">
+        <form action="/groups/add" method="POST">
+          <div class="mb-3">
+            <label class="form-label required">Group Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Production Servers" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="2" placeholder="Optional description..."></textarea>
+          </div>
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-folders"></i> Create Group
+            </button>
+            <a href="/groups" class="btn btn-outline-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,42 @@
+{{define "content"}}
+<div class="row row-cards">
+  <div class="col-lg-8 mx-auto">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-upload"></i> Import SSH Key</h3>
+      </div>
+      <div class="card-body">
+        <form action="/keys/import" method="POST">
+          {{if .Users}}
+          <div class="mb-3">
+            <label class="form-label required">Import for User</label>
+            <select name="target_user_id" class="form-select">
+              {{$currentUser := .User}}
+              {{range .Users}}
+              <option value="{{.ID}}" {{if eq .ID $currentUser.ID}}selected{{end}}>{{.Username}} ({{.Role}})</option>
+              {{end}}
+            </select>
+            <small class="form-hint">As admin you can import SSH keys for any user</small>
+          </div>
+          {{end}}
+          <div class="mb-3">
+            <label class="form-label required">Key Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. My Server Key" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Private Key (PEM)</label>
+            <textarea name="private_key" class="form-control" rows="10" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----" required style="font-family: monospace; font-size: 0.85rem;"></textarea>
+            <small class="form-hint">Paste your private key in PEM format. The public key and fingerprint will be automatically extracted.</small>
+          </div>
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-upload"></i> Import Key
+            </button>
+            <a href="/keys" class="btn btn-outline-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

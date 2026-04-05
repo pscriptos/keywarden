@@ -1,0 +1,126 @@
+{{define "content"}}
+<div class="row row-cards">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-server"></i> Hosts</h3>
+        <div class="card-actions">
+          <a href="/servers/add" class="btn btn-primary">
+            <i class="ti ti-plus"></i> Add Host
+          </a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Host</th>
+              <th>Port</th>
+              <th>User</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Servers}}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="ti ti-server me-2 text-primary"></i>
+                  <strong>{{.Name}}</strong>
+                </div>
+              </td>
+              <td><code>{{.Hostname}}</code></td>
+              <td>{{.Port}}</td>
+              <td>{{.Username}}</td>
+              <td>{{.Description}}</td>
+              <td>
+                <div class="btn-list flex-nowrap">
+                  <button class="btn btn-sm btn-icon btn-outline-info test-reach-btn" title="Test Reachability (TCP)" data-server-id="{{.ID}}">
+                    <i class="ti ti-plug"></i>
+                  </button>
+                  <button class="btn btn-sm btn-icon btn-outline-success test-auth-btn" title="Test SSH Login" data-server-id="{{.ID}}">
+                    <i class="ti ti-key"></i>
+                  </button>
+                  <a href="/servers/{{.ID}}/edit" class="btn btn-sm btn-icon btn-outline-primary" title="Edit">
+                    <i class="ti ti-edit"></i>
+                  </a>
+                  <form method="POST" action="/servers/{{.ID}}/delete" class="d-inline" onsubmit="return confirm('Delete this host?')">
+                    <button type="submit" class="btn btn-sm btn-icon btn-outline-danger" title="Delete">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="6" class="text-center text-secondary py-4">
+                <i class="ti ti-server-off" style="font-size: 2rem;"></i>
+                <p class="mt-2">No hosts configured. Add one to start deploying keys.</p>
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function testServer(btn, url, origClass, origTitle) {
+  var serverId = btn.getAttribute('data-server-id');
+  var origHTML = btn.innerHTML;
+  btn.innerHTML = '<i class="ti ti-loader ti-spin"></i>';
+  btn.disabled = true;
+
+  var form = new FormData();
+  form.append('server_id', serverId);
+  // Add CSRF token
+  var csrfMatch = document.cookie.match(/(?:^|;\s*)_csrf=([^;]*)/);
+  if (csrfMatch) form.append('_csrf', decodeURIComponent(csrfMatch[1]));
+
+  fetch(url, { method: 'POST', body: form })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        btn.classList.remove(origClass);
+        btn.classList.add('btn-success');
+        btn.innerHTML = '<i class="ti ti-check"></i>';
+      } else {
+        btn.classList.remove(origClass);
+        btn.classList.add('btn-outline-danger');
+        btn.innerHTML = '<i class="ti ti-x"></i>';
+      }
+      btn.title = data.message;
+      setTimeout(function() {
+        btn.innerHTML = origHTML;
+        btn.className = btn.className.replace(/btn-success|btn-outline-danger|btn-info/g, '');
+        btn.classList.add('btn', 'btn-sm', 'btn-icon', origClass);
+        btn.disabled = false;
+        btn.title = origTitle;
+      }, 4000);
+    })
+    .catch(function() {
+      btn.innerHTML = origHTML;
+      btn.disabled = false;
+    });
+}
+
+// Reachability test (TCP port check)
+document.querySelectorAll('.test-reach-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    testServer(this, '/servers/test', 'btn-outline-info', 'Test Reachability (TCP)');
+  });
+});
+
+// SSH Auth test (actual SSH login with first key)
+document.querySelectorAll('.test-auth-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    testServer(this, '/servers/test-auth', 'btn-outline-success', 'Test SSH Login');
+  });
+});
+</script>
+{{end}}

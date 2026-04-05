@@ -1,0 +1,55 @@
+# Keywarden CI - Release Docker Build
+# Triggers when a release is published (tag format: v0.1.0)
+# Builds and pushes Docker image to Gitea Container Registry with :latest and :vX.Y.Z tags
+name: Release Docker Image
+
+on:
+  release:
+    types: [published]
+
+env:
+  IMAGE_NAME: keywarden
+
+jobs:
+  docker:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          # Release tag is e.g. v0.1.0
+          TAG="${{ github.event.release.tag_name }}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          # Strip 'v' prefix for docker tag if needed
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Gitea Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ vars.REGISTRY_URL }}/${{ secrets.REGISTRY_USER }}/${{ env.IMAGE_NAME }}:latest
+            ${{ vars.REGISTRY_URL }}/${{ secrets.REGISTRY_USER }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
+          labels: |
+            org.opencontainers.image.title=Keywarden
+            org.opencontainers.image.description=Centralized SSH Key Management and Deployment
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.licenses=AGPL-3.0-or-later

@@ -1,0 +1,105 @@
+{{define "content"}}
+<div class="row row-deck row-cards">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-user-plus"></i> Add New User</h3>
+      </div>
+      <div class="card-body">
+        <form action="/users/add" method="post" autocomplete="off" id="addUserForm">
+          <div class="mb-3">
+            <label class="form-label required">Username</label>
+            <div class="input-icon">
+              <span class="input-icon-addon"><i class="ti ti-user"></i></span>
+              <input type="text" name="username" class="form-control" placeholder="Username" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Email</label>
+            <div class="input-icon">
+              <span class="input-icon-addon"><i class="ti ti-mail"></i></span>
+              <input type="email" name="email" class="form-control" placeholder="user@example.com" required>
+            </div>
+          </div>
+          {{if .EmailEnabled}}
+          <div class="mb-3">
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="send_invitation" value="1" id="sendInvitation">
+              <span class="form-check-label">Send invitation email</span>
+              <span class="form-check-description">The user will receive an email with a link to set their password and complete registration. No manual password required.</span>
+            </label>
+          </div>
+          {{end}}
+          <div class="mb-3" id="passwordField">
+            <label class="form-label required">Password</label>
+            <div class="input-icon">
+              <span class="input-icon-addon"><i class="ti ti-lock"></i></span>
+              <input type="password" name="password" class="form-control" placeholder="Password" id="passwordInput" required minlength="{{if .PasswordPolicy}}{{.PasswordPolicy.MinLength}}{{else}}8{{end}}">
+            </div>
+            {{if .PasswordPolicy}}
+            <small class="form-hint">
+              Min. {{.PasswordPolicy.MinLength}} characters{{if .PasswordPolicy.RequireUpper}}, uppercase{{end}}{{if .PasswordPolicy.RequireLower}}, lowercase{{end}}{{if .PasswordPolicy.RequireDigit}}, digit{{end}}{{if .PasswordPolicy.RequireSpecial}}, special char{{end}}.
+            </small>
+            {{else}}
+            <small class="form-hint">Minimum 8 characters.</small>
+            {{end}}
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Role</label>
+            <select name="role" class="form-select">
+              <option value="user" selected>User</option>
+              {{with $.User}}
+              {{if eq .Role "owner"}}
+              <option value="admin">Admin</option>
+              <option value="owner">Owner</option>
+              {{end}}
+              {{end}}
+            </select>
+          </div>
+          <div class="mb-3" id="mustChangeField">
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="must_change_password" value="1" checked>
+              <span class="form-check-label">Initial password</span>
+              <span class="form-check-description">User must change their password on next login.</span>
+            </label>
+          </div>
+          <div class="form-footer">
+            <a href="/users" class="btn btn-outline-secondary me-2">
+              <i class="ti ti-arrow-left"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-user-plus"></i> Create User
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  var cb = document.getElementById('sendInvitation');
+  if (!cb) return;
+
+  var pwField = document.getElementById('passwordField');
+  var pwInput = document.getElementById('passwordInput');
+  var mustChangeField = document.getElementById('mustChangeField');
+
+  function toggle() {
+    if (cb.checked) {
+      pwField.style.display = 'none';
+      pwInput.removeAttribute('required');
+      pwInput.value = '';
+      mustChangeField.style.display = 'none';
+    } else {
+      pwField.style.display = '';
+      pwInput.setAttribute('required', 'required');
+      mustChangeField.style.display = '';
+    }
+  }
+
+  cb.addEventListener('change', toggle);
+  toggle();
+})();
+</script>
+{{end}}

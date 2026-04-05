@@ -1,0 +1,27 @@
+# Keywarden CI - Security Scan
+# Checks for known vulnerabilities in Go dependencies on PRs
+name: Security Scan
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  govulncheck:
+    name: Go Vulnerability Check
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.26-alpine
+
+    steps:
+      - name: Install dependencies
+        run: apk add --no-cache git gcc musl-dev sqlite-dev
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        run: govulncheck ./...

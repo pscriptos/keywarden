@@ -1,0 +1,432 @@
+{{define "content"}}
+<div class="row row-deck row-cards">
+
+  <!-- Application Settings -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-settings"></i> Application Settings</h3>
+      </div>
+      <div class="card-body">
+        <form action="/admin/settings" method="post">
+          <input type="hidden" name="form_type" value="app_settings">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Application Name</label>
+              <input type="text" name="app_name" class="form-control" value="{{index .Settings "app_name"}}" placeholder="Keywarden">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Default Key Type</label>
+              <select name="default_key_type" class="form-select">
+                <option value="ed25519" {{if eq (index .Settings "default_key_type") "ed25519"}}selected{{end}}>Ed25519</option>
+                <option value="rsa" {{if eq (index .Settings "default_key_type") "rsa"}}selected{{end}}>RSA</option>
+              </select>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Default RSA Key Bits</label>
+              <select name="default_key_bits" class="form-select">
+                <option value="4096" {{if eq (index .Settings "default_key_bits") "4096"}}selected{{end}}>4096</option>
+                <option value="2048" {{if eq (index .Settings "default_key_bits") "2048"}}selected{{end}}>2048</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Session Timeout (minutes)</label>
+              <input type="number" name="session_timeout" class="form-control" value="{{index .Settings "session_timeout"}}" placeholder="60" min="5" max="1440">
+            </div>
+          </div>
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-device-floppy"></i> Save Settings
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security Settings -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-shield-lock"></i> Security Settings</h3>
+      </div>
+      <div class="card-body">
+        <form action="/admin/settings" method="post">
+          <input type="hidden" name="form_type" value="security_settings">
+
+          <!-- Password Policy -->
+          <h4 class="mb-3"><i class="ti ti-lock"></i> Password Policy</h4>
+          <div class="row mb-3">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Minimum Password Length</label>
+              <input type="number" name="pw_min_length" class="form-control"
+                     value="{{if index .Settings "pw_min_length"}}{{index .Settings "pw_min_length"}}{{else}}8{{end}}"
+                     min="4" max="128" placeholder="8">
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="pw_require_upper" value="true"
+                       {{if or (eq (index .Settings "pw_require_upper") "true") (eq (index .Settings "pw_require_upper") "")}}checked{{end}}>
+                <span class="form-check-label">Require uppercase letter (A-Z)</span>
+              </label>
+            </div>
+            <div class="col-md-6">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="pw_require_lower" value="true"
+                       {{if or (eq (index .Settings "pw_require_lower") "true") (eq (index .Settings "pw_require_lower") "")}}checked{{end}}>
+                <span class="form-check-label">Require lowercase letter (a-z)</span>
+              </label>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="pw_require_digit" value="true"
+                       {{if or (eq (index .Settings "pw_require_digit") "true") (eq (index .Settings "pw_require_digit") "")}}checked{{end}}>
+                <span class="form-check-label">Require digit (0-9)</span>
+              </label>
+            </div>
+            <div class="col-md-6">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="pw_require_special" value="true"
+                       {{if eq (index .Settings "pw_require_special") "true"}}checked{{end}}>
+                <span class="form-check-label">Require special character (!@#$...)</span>
+              </label>
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <!-- MFA Enforcement -->
+          <h4 class="mb-3"><i class="ti ti-shield-check"></i> MFA Enforcement</h4>
+          <div class="row mb-3">
+            <div class="col-md-8">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="mfa_required" value="true"
+                       {{if eq (index .Settings "mfa_required") "true"}}checked{{end}}>
+                <span class="form-check-label">Require MFA for all users</span>
+                <span class="form-check-description">When enabled, all users must set up two-factor authentication before using the application. Users without MFA will be redirected to the MFA setup page.</span>
+              </label>
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <!-- Account Lockout -->
+          <h4 class="mb-3"><i class="ti ti-lock-access"></i> Account Lockout</h4>
+          <div class="row mb-3">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Failed Attempts Before Lockout</label>
+              <input type="number" name="lockout_attempts" class="form-control"
+                     value="{{if index .Settings "lockout_attempts"}}{{index .Settings "lockout_attempts"}}{{else}}5{{end}}"
+                     min="0" max="100" placeholder="5">
+              <small class="form-hint">Set to 0 to disable account lockout.</small>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Lockout Duration (minutes)</label>
+              <input type="number" name="lockout_duration" class="form-control"
+                     value="{{if index .Settings "lockout_duration"}}{{index .Settings "lockout_duration"}}{{else}}15{{end}}"
+                     min="1" max="1440" placeholder="15">
+              <small class="form-hint">How long to lock the account after too many failed attempts.</small>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-device-floppy"></i> Save Security Settings
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email / SMTP Configuration -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-mail"></i> Email / SMTP</h3>
+      </div>
+      <div class="card-body">
+        {{if .EmailEnabled}}
+        <div class="alert alert-success">
+          <div class="d-flex">
+            <div><i class="ti ti-check icon alert-icon"></i></div>
+            <div>
+              <h4 class="alert-title">SMTP is configured</h4>
+              <div class="text-secondary">Email notifications are available. SMTP settings are managed via environment variables.</div>
+            </div>
+          </div>
+        </div>
+        <form action="/admin/settings/email/test" method="post">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Send Test Email</label>
+              <div class="input-icon">
+                <span class="input-icon-addon"><i class="ti ti-mail"></i></span>
+                <input type="email" name="test_email" class="form-control" placeholder="recipient@example.com" required>
+              </div>
+            </div>
+            <div class="col-auto mb-3 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary">
+                <i class="ti ti-send"></i> Send Test
+              </button>
+            </div>
+          </div>
+          <small class="form-hint mt-n2 d-block mb-3">Send a test email to verify your SMTP configuration.</small>
+        </form>
+        {{else}}
+        <div class="alert alert-warning">
+          <div class="d-flex">
+            <div><i class="ti ti-alert-triangle icon alert-icon"></i></div>
+            <div>
+              <h4 class="alert-title">SMTP is not configured</h4>
+              <div class="text-secondary">
+                Set the <code>KEYWARDEN_SMTP_HOST</code> environment variable to enable email notifications.
+                See the <a href="https://git.techniverse.net/scriptos/keywarden/src/branch/master/docs/email.md" target="_blank">Email documentation</a> for details.
+              </div>
+            </div>
+          </div>
+        </div>
+        {{end}}
+      </div>
+    </div>
+  </div>
+
+  <!-- System Master Key -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-key"></i> System Master Key</h3>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <div class="d-flex">
+            <div><i class="ti ti-info-circle icon alert-icon"></i></div>
+            <div>
+              <h4 class="alert-title">About the System Master Key</h4>
+              <div class="text-secondary">
+                The system master key is used by Keywarden to authenticate against remote servers for
+                key deployments and assignment syncs. You must add this public key to the
+                <code>~/.ssh/authorized_keys</code> file of the admin user on each target server.
+              </div>
+            </div>
+          </div>
+        </div>
+        {{if .MasterKeyPublic}}
+        <input type="hidden" id="masterKeyValue" value="{{.MasterKeyPublic}}">
+        <div class="mb-3">
+          <label class="form-label">Public Key</label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="masterKeyDisplay" value="{{.MasterKeyPublic}}" readonly>
+            <button class="btn btn-outline-secondary" type="button" onclick="toggleMasterKey()" title="Show/Hide">
+              <i class="ti ti-eye" id="masterKeyEyeIcon"></i>
+            </button>
+            <button class="btn btn-outline-primary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('masterKeyValue').value); this.innerHTML='<i class=\'ti ti-check\'></i>'; setTimeout(()=>this.innerHTML='<i class=\'ti ti-copy\'></i>', 2000);" title="Copy">
+              <i class="ti ti-copy"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Fingerprint</label>
+          <code>{{.MasterKeyFingerprint}}</code>
+        </div>
+        <script>
+        function toggleMasterKey() {
+          var input = document.getElementById('masterKeyDisplay');
+          var icon = document.getElementById('masterKeyEyeIcon');
+          if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'ti ti-eye-off';
+          } else {
+            input.type = 'password';
+            icon.className = 'ti ti-eye';
+          }
+        }
+        </script>
+        {{else}}
+        <div class="alert alert-danger">
+          <i class="ti ti-alert-triangle"></i> System master key not found. Please restart Keywarden to generate it.
+        </div>
+        {{end}}
+        <hr>
+        <h4 class="mb-3"><i class="ti ti-refresh"></i> Regenerate Master Key</h4>
+        <div class="alert alert-warning">
+          <div class="d-flex">
+            <div><i class="ti ti-alert-triangle icon alert-icon"></i></div>
+            <div>
+              <h4 class="alert-title">Warning</h4>
+              <div class="text-secondary">
+                Regenerating the master key will invalidate all existing server connections.
+                You must re-deploy the new public key to all target servers. This action cannot be undone.
+              </div>
+            </div>
+          </div>
+        </div>
+        <form action="/admin/masterkey/regenerate" method="post" onsubmit="return confirm('Are you absolutely sure you want to regenerate the system master key? All existing server connections will break until the new key is deployed.');">
+          <div class="row align-items-end">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Confirm your password</label>
+              <input type="password" name="confirm_password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <div class="col-auto mb-3">
+              <button type="submit" class="btn btn-danger">
+                <i class="ti ti-refresh"></i> Regenerate Master Key
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backup & Restore -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-database-export"></i> Backup & Restore</h3>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <div class="d-flex">
+            <div><i class="ti ti-info-circle icon alert-icon"></i></div>
+            <div>
+              <h4 class="alert-title">About Backups</h4>
+              <div class="text-secondary">
+                Backups contain all system data including users, SSH keys, servers, groups, assignments,
+                cron jobs, settings, and audit logs. The backup file is encrypted with AES-256-GCM using
+                the password you provide. Keep the password safe — without it, the backup cannot be restored.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Backup -->
+        <h4 class="mb-3"><i class="ti ti-download"></i> Export Backup</h4>
+        <form action="/admin/backup/export" method="post" id="backupExportForm">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Backup Password</label>
+              <input type="password" name="backup_password" id="backup_password" class="form-control" placeholder="Enter a secure password" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Confirm Password</label>
+              <input type="password" name="backup_password_confirm" id="backup_password_confirm" class="form-control" placeholder="Confirm password" required>
+            </div>
+            <div class="col-auto mb-3 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary" onclick="return validateBackupForm()">
+                <i class="ti ti-download"></i> Export Backup
+              </button>
+            </div>
+          </div>
+          <small class="form-hint mt-n2 d-block mb-3">Password must meet the configured password policy.</small>
+        </form>
+
+        <hr class="my-4">
+
+        <!-- Import Backup -->
+        <h4 class="mb-3"><i class="ti ti-upload"></i> Restore Backup</h4>
+        <div class="alert alert-warning">
+          <div class="d-flex">
+            <div><i class="ti ti-alert-triangle icon alert-icon"></i></div>
+            <div>
+              <h4 class="alert-title">Warning</h4>
+              <div class="text-secondary">
+                Restoring a backup will <strong>replace all current data</strong> with the data from the backup file.
+                This action cannot be undone. Make sure to export a current backup first if needed.
+              </div>
+            </div>
+          </div>
+        </div>
+        <form action="/admin/backup/import" method="post" enctype="multipart/form-data" onsubmit="return confirm('Are you absolutely sure you want to restore this backup? ALL current data will be replaced. This action cannot be undone!');">
+          <div class="row">
+            <div class="col-md-5 mb-3">
+              <label class="form-label">Backup File (.kwbak)</label>
+              <input type="file" name="backup_file" class="form-control" accept=".kwbak" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Backup Password</label>
+              <input type="password" name="restore_password" class="form-control" placeholder="Enter the backup password" required>
+            </div>
+            <div class="col-auto mb-3 d-flex align-items-end">
+              <button type="submit" class="btn btn-danger">
+                <i class="ti ti-upload"></i> Restore Backup
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function validateBackupForm() {
+  var pw = document.getElementById('backup_password').value;
+  var pwConfirm = document.getElementById('backup_password_confirm').value;
+  if (pw !== pwConfirm) {
+    alert('Passwords do not match.');
+    return false;
+  }
+  if (pw.length < 4) {
+    alert('Password is too short.');
+    return false;
+  }
+  return true;
+}
+
+// Track unsaved changes on forms (except backup/masterkey forms)
+(function() {
+  var settingsForms = document.querySelectorAll('form[action="/admin/settings"]');
+  settingsForms.forEach(function(form) {
+    var inputs = form.querySelectorAll('input, select, textarea');
+    var saveBtn = form.querySelector('button[type="submit"]');
+    var banner = null;
+
+    function markDirty() {
+      form.dataset.dirty = 'true';
+      // Highlight save button
+      if (saveBtn) {
+        saveBtn.classList.remove('btn-primary');
+        saveBtn.classList.add('btn-warning');
+        saveBtn.innerHTML = '<i class="ti ti-alert-triangle"></i> Unsaved changes – Save now!';
+      }
+      // Show banner if not already visible
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.className = 'alert alert-warning alert-dismissible mt-2 mb-0 py-2';
+        banner.setAttribute('role', 'alert');
+        banner.innerHTML = '<i class="ti ti-alert-triangle"></i> You have unsaved changes. Click the save button to apply them.';
+        form.querySelector('.form-footer').insertAdjacentElement('beforebegin', banner);
+      }
+    }
+
+    inputs.forEach(function(input) {
+      if (input.type === 'hidden') return;
+      input.addEventListener('change', markDirty);
+      input.addEventListener('input', markDirty);
+    });
+
+    form.addEventListener('submit', function() {
+      form.dataset.dirty = '';
+      window._adminSettingsSaving = true;
+    });
+  });
+
+  // Warn before leaving with unsaved changes
+  window.addEventListener('beforeunload', function(e) {
+    if (window._adminSettingsSaving) return;
+    var dirty = document.querySelector('form[data-dirty="true"]');
+    if (dirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+})();
+</script>
+{{end}}

@@ -1,0 +1,81 @@
+{{define "content"}}
+<div class="row row-deck row-cards">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-shield-check"></i> Setup Two-Factor Authentication</h3>
+      </div>
+      <div class="card-body">
+        {{if .MFARequired}}
+        <div class="alert alert-warning">
+          <div class="d-flex">
+            <div><i class="ti ti-alert-triangle icon alert-icon"></i></div>
+            <div>
+              <h4 class="alert-title">MFA is required</h4>
+              <div class="text-secondary">Your administrator requires all users to set up two-factor authentication. Please configure MFA to continue using the application.</div>
+            </div>
+          </div>
+        </div>
+        {{end}}
+        <div class="mb-4">
+          <h4>Step 1: Scan QR Code</h4>
+          <p class="text-secondary">
+            Scan the QR code below with your authenticator app (Google Authenticator, Authy, etc.)
+          </p>
+          <div class="text-center my-4">
+            <div id="qrcode" class="d-inline-block p-3 bg-white border rounded"></div>
+          </div>
+          <div class="text-center">
+            <p class="text-secondary mb-1">Or enter this secret manually:</p>
+            <code class="fs-4 user-select-all">{{.MFASecret}}</code>
+          </div>
+        </div>
+
+        <hr>
+
+        <div>
+          <h4>Step 2: Verify Code</h4>
+          <p class="text-secondary">
+            Enter the 6-digit code from your authenticator app to confirm setup.
+          </p>
+          <form action="/settings/mfa/setup" method="post">
+            <input type="hidden" name="mfa_secret" value="{{.MFASecret}}">
+            <div class="mb-3">
+              <label class="form-label required">Verification Code</label>
+              <div class="input-icon">
+                <span class="input-icon-addon"><i class="ti ti-shield-lock"></i></span>
+                <input type="text" name="mfa_code" class="form-control" placeholder="000000" 
+                       required pattern="[0-9]{6}" maxlength="6" autocomplete="off" autofocus
+                       style="font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center;">
+              </div>
+            </div>
+            <div class="form-footer">
+              {{if not .MFARequired}}
+              <a href="/settings" class="btn btn-outline-secondary me-2">
+                <i class="ti ti-arrow-left"></i> Cancel
+              </a>
+              {{end}}
+              <button type="submit" class="btn btn-primary">
+                <i class="ti ti-shield-check"></i> Enable MFA
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QR Code Generation via JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+  new QRCode(document.getElementById("qrcode"), {
+    text: "{{.MFAUri}}",
+    width: 200,
+    height: 200,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
+</script>
+{{end}}

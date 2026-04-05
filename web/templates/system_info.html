@@ -1,0 +1,76 @@
+{{define "content"}}
+<div class="row row-deck row-cards">
+  <!-- System Information -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-info-circle"></i> System Information</h3>
+      </div>
+      <div class="card-body">
+        {{with .SystemInfo}}
+        <div class="datagrid">
+          <div class="datagrid-item">
+            <div class="datagrid-title">Runtime Environment</div>
+            <div class="datagrid-content">
+              {{if eq .Runtime "Docker"}}
+              <span class="badge bg-blue-lt"><i class="ti ti-brand-docker"></i> Docker</span>
+              {{else}}
+              <span class="badge bg-cyan-lt">Native</span>
+              {{end}}
+            </div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Architecture</div>
+            <div class="datagrid-content"><span class="badge bg-purple-lt">{{.Arch}}</span></div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Operating System</div>
+            <div class="datagrid-content">{{.OS}}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Hostname</div>
+            <div class="datagrid-content"><code>{{.Hostname}}</code></div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Memory (Allocated)</div>
+            <div class="datagrid-content">{{.MemAlloc}}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Memory (System)</div>
+            <div class="datagrid-content">{{.MemSys}}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">CPU Cores</div>
+            <div class="datagrid-content">{{.NumCPU}}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Goroutines</div>
+            <div class="datagrid-content">{{.NumGoroutine}}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Go Version</div>
+            <div class="datagrid-content">{{.GoVersion}}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Uptime</div>
+            <div class="datagrid-content">{{.Uptime}}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Encryption</div>
+            <div class="datagrid-content"><span class="badge bg-green-lt">AES-256-GCM</span></div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">License</div>
+            <div class="datagrid-content">AGPLv3</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Repository</div>
+            <div class="datagrid-content"><a href="https://git.techniverse.net/scriptos/keywarden" target="_blank">git.techniverse.net/scriptos/keywarden</a></div>
+          </div>
+        </div>
+        {{end}}
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

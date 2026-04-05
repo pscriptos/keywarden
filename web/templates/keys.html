@@ -1,0 +1,124 @@
+{{define "content"}}
+<div class="row row-cards">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-key"></i> SSH Keys</h3>
+        <div class="card-actions">
+          <a href="/keys/generate" class="btn btn-primary">
+            <i class="ti ti-plus"></i> Generate New Key
+          </a>
+          <a href="/keys/import" class="btn btn-outline-primary ms-2">
+            <i class="ti ti-upload"></i> Import Key
+          </a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              {{if or (eq .User.Role "admin") (eq .User.Role "owner")}}
+              <th>Owner</th>
+              {{end}}
+              <th>Name</th>
+              <th>Type</th>
+              <th>Bits</th>
+              <th>Fingerprint</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{if or (eq $.User.Role "admin") (eq $.User.Role "owner")}}
+            {{/* Admin/Owner view: show all keys with owner info */}}
+            {{range .Data}}
+            <tr>
+              <td>
+                <span class="badge bg-{{if eq .OwnerUsername $.User.Username}}green-lt{{else}}blue-lt{{end}}">{{.OwnerUsername}}</span>
+              </td>
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="ti ti-key me-2 text-primary"></i>
+                  <strong>{{.Name}}</strong>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-{{if eq .KeyType "ed25519"}}green-lt{{else}}azure-lt{{end}}">{{.KeyType}}</span>
+              </td>
+              <td>{{.Bits}}</td>
+              <td><code class="small">{{.Fingerprint}}</code></td>
+              <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              <td>
+                <div class="btn-list flex-nowrap">
+                  <a href="/keys/{{.ID}}/view" class="btn btn-sm btn-icon btn-outline-primary" title="View Public Key">
+                    <i class="ti ti-eye"></i>
+                  </a>
+                  {{if eq .UserID $.User.ID}}
+                  <a href="/keys/{{.ID}}/download" class="btn btn-sm btn-icon btn-outline-secondary" title="Download Private Key">
+                    <i class="ti ti-download"></i>
+                  </a>
+                  {{end}}
+                  <form method="POST" action="/keys/{{.ID}}/delete" class="d-inline" onsubmit="return confirm('Delete this key?')">
+                    <button type="submit" class="btn btn-sm btn-icon btn-outline-danger" title="Delete">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="7" class="text-center text-secondary py-4">
+                <i class="ti ti-key-off" style="font-size: 2rem;"></i>
+                <p class="mt-2">No SSH keys found. Generate or import one to get started.</p>
+              </td>
+            </tr>
+            {{end}}
+            {{else}}
+            {{/* User view: show only own keys */}}
+            {{range .Keys}}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="ti ti-key me-2 text-primary"></i>
+                  <strong>{{.Name}}</strong>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-{{if eq .KeyType "ed25519"}}green-lt{{else}}azure-lt{{end}}">{{.KeyType}}</span>
+              </td>
+              <td>{{.Bits}}</td>
+              <td><code class="small">{{.Fingerprint}}</code></td>
+              <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              <td>
+                <div class="btn-list flex-nowrap">
+                  <a href="/keys/{{.ID}}/view" class="btn btn-sm btn-icon btn-outline-primary" title="View Public Key">
+                    <i class="ti ti-eye"></i>
+                  </a>
+                  <a href="/keys/{{.ID}}/download" class="btn btn-sm btn-icon btn-outline-secondary" title="Download Private Key">
+                    <i class="ti ti-download"></i>
+                  </a>
+                  <form method="POST" action="/keys/{{.ID}}/delete" class="d-inline" onsubmit="return confirm('Delete this key?')">
+                    <button type="submit" class="btn btn-sm btn-icon btn-outline-danger" title="Delete">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="6" class="text-center text-secondary py-4">
+                <i class="ti ti-key-off" style="font-size: 2rem;"></i>
+                <p class="mt-2">No SSH keys found. Generate or import one to get started.</p>
+              </td>
+            </tr>
+            {{end}}
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

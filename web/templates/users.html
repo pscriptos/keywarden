@@ -1,0 +1,100 @@
+{{define "content"}}
+<div class="row row-deck row-cards">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-users"></i> User Management</h3>
+        <div class="card-actions">
+          <a href="/users/add" class="btn btn-primary">
+            <i class="ti ti-plus"></i> Add User
+          </a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>MFA</th>
+              <th>Last Login</th>
+              <th>Created</th>
+              <th class="w-1">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Users}}
+            <tr>
+              <td>{{.ID}}</td>
+              <td>
+                <i class="ti ti-user"></i> {{.Username}}
+              </td>
+              <td class="text-secondary">{{.Email}}</td>
+              <td>
+                {{if eq .Role "owner"}}
+                <span class="badge bg-purple-lt">Owner</span>
+                {{else if eq .Role "admin"}}
+                <span class="badge bg-red-lt">Admin</span>
+                {{else}}
+                <span class="badge bg-blue-lt">User</span>
+                {{end}}
+              </td>
+              <td>
+                {{if .LockedUntil}}
+                <span class="badge bg-danger-lt"><i class="ti ti-lock"></i> Locked</span>
+                {{else if .MustChangePassword}}
+                <span class="badge bg-warning-lt"><i class="ti ti-alert-triangle"></i> Password Change</span>
+                {{else}}
+                <span class="badge bg-success-lt"><i class="ti ti-check"></i> Active</span>
+                {{end}}
+              </td>
+              <td>
+                {{if .MFAEnabled}}
+                <span class="badge bg-green-lt"><i class="ti ti-shield-check"></i> Enabled</span>
+                {{else}}
+                <span class="badge bg-secondary-lt"><i class="ti ti-shield-off"></i> Disabled</span>
+                {{end}}
+              </td>
+              <td class="text-secondary">
+                {{if .LastLoginAt}}
+                {{.LastLoginAt.Format "2006-01-02 15:04"}}
+                {{else}}
+                <span class="text-muted">Never</span>
+                {{end}}
+              </td>
+              <td class="text-secondary">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              <td>
+                <div class="btn-list flex-nowrap">
+                  {{if .LockedUntil}}
+                  <form method="POST" action="/users/{{.ID}}/unlock" class="d-inline" title="Unlock Account">
+                    <button type="submit" class="btn btn-sm btn-icon btn-outline-warning">
+                      <i class="ti ti-lock-open"></i>
+                    </button>
+                  </form>
+                  {{end}}
+                  <a href="/users/{{.ID}}/edit" class="btn btn-sm btn-icon btn-outline-primary" title="Edit">
+                    <i class="ti ti-edit"></i>
+                  </a>
+                  <form method="POST" action="/users/{{.ID}}/delete" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this user?')">
+                    <button type="submit" class="btn btn-sm btn-icon btn-outline-danger" title="Delete">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="9" class="text-center text-secondary">No users found.</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,69 @@
+{{define "content"}}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-edit"></i> Edit Host</h3>
+      </div>
+      <div class="card-body">
+        {{$server := .Server}}
+        <form action="/servers/{{$server.ID}}/edit" method="POST">
+          <div class="mb-3">
+            <label class="form-label required">Server Name</label>
+            <input type="text" name="name" class="form-control" value="{{$server.Name}}" required>
+          </div>
+          <div class="row mb-3">
+            <div class="col-8">
+              <label class="form-label required">Hostname / IP</label>
+              <input type="text" name="hostname" class="form-control" value="{{$server.Hostname}}" required>
+            </div>
+            <div class="col-4">
+              <label class="form-label">Port</label>
+              <input type="number" name="port" class="form-control" value="{{$server.Port}}" min="1" max="65535">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">SSH Username</label>
+            <input type="text" name="username" class="form-control" value="{{$server.Username}}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="2">{{$server.Description}}</textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Groups</label>
+            <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+              {{range .Data}}
+              <label class="form-selectgroup-item flex-fill">
+                <input type="checkbox" name="group_ids" value="{{.ID}}" class="form-selectgroup-input"
+                  {{if .Selected}}checked{{end}}
+                >
+                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                  <div class="me-3">
+                    <span class="form-selectgroup-check"></span>
+                  </div>
+                  <div>
+                    <strong>{{.Name}}</strong>
+                    {{if .Description}}<br><small class="text-secondary">{{.Description}}</small>{{end}}
+                  </div>
+                </div>
+              </label>
+              {{else}}
+              <div class="text-secondary">
+                <small>No groups available. <a href="/groups/add">Create a group</a> first.</small>
+              </div>
+              {{end}}
+            </div>
+          </div>
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-device-floppy"></i> Save Changes
+            </button>
+            <a href="/servers" class="btn btn-outline-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

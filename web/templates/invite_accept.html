@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <title>Complete Registration - {{appName}}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="preload" href="/static/css/fonts/tabler-icons.woff2" as="font" type="font/woff2" crossorigin>
+    <script>
+      (function() {
+        var resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-bs-theme', resolved);
+        document.documentElement.style.colorScheme = resolved;
+      })();
+    </script>
+    <style>
+      html[data-bs-theme="dark"],
+      html[data-bs-theme="dark"] body { background-color: #1a2234; color-scheme: dark; }
+      html[data-bs-theme="light"],
+      html[data-bs-theme="light"] body { background-color: #f1f5f9; color-scheme: light; }
+      [data-bs-theme="dark"] ::selection { background: #3d6098; color: #f0f4f8; }
+      [data-bs-theme="dark"] ::-moz-selection { background: #3d6098; color: #f0f4f8; }
+      [data-bs-theme="light"] ::selection { background: #b3d4fc; color: #1a1a1a; }
+      [data-bs-theme="light"] ::-moz-selection { background: #b3d4fc; color: #1a1a1a; }
+    </style>
+    <link rel="stylesheet" href="/static/css/tabler.min.css">
+    <link rel="stylesheet" href="/static/css/tabler-icons.min.css">
+  </head>
+  <body class="d-flex flex-column">
+    <div class="page page-center">
+      <div class="container container-tight py-4">
+        <div class="text-center mb-4">
+          <h1><i class="ti ti-key"></i> {{appName}}</h1>
+          <p class="text-secondary">Centralized SSH Key Management and Deployment</p>
+        </div>
+        <div class="card card-md">
+          <div class="card-body">
+            {{if .Error}}
+            <!-- Error state (invalid/expired/used token) -->
+            <h2 class="h2 text-center mb-4">
+              <i class="ti ti-alert-triangle text-warning"></i> {{.Title}}
+            </h2>
+            <div class="alert alert-warning">
+              <i class="ti ti-alert-circle"></i> {{.Error}}
+            </div>
+            <div class="text-center mt-3">
+              <a href="/login" class="btn btn-primary">
+                <i class="ti ti-login"></i> Go to Login
+              </a>
+            </div>
+            {{else}}
+            <!-- Registration form -->
+            <h2 class="h2 text-center mb-4">
+              <i class="ti ti-user-check"></i> Complete Registration
+            </h2>
+            {{if .Flash}}
+            <div class="alert alert-{{.Flash.Type}}">
+              <i class="ti ti-alert-circle"></i> {{.Flash.Message}}
+            </div>
+            {{end}}
+            <p class="text-secondary text-center mb-3">
+              Welcome, <strong>{{.EditUser.Username}}</strong>! Please set your password to activate your account.
+            </p>
+            <form action="/invite/{{.Data}}" method="post" autocomplete="off">
+              <div class="mb-3">
+                <label class="form-label">Username</label>
+                <div class="input-icon">
+                  <span class="input-icon-addon"><i class="ti ti-user"></i></span>
+                  <input type="text" class="form-control" value="{{.EditUser.Username}}" disabled>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label required">New Password</label>
+                <div class="input-icon">
+                  <span class="input-icon-addon"><i class="ti ti-lock"></i></span>
+                  <input type="password" name="new_password" class="form-control" placeholder="New password" required autofocus minlength="{{if .PasswordPolicy}}{{.PasswordPolicy.MinLength}}{{else}}8{{end}}">
+                </div>
+                {{if .PasswordPolicy}}
+                <small class="form-hint">
+                  Min. {{.PasswordPolicy.MinLength}} characters{{if .PasswordPolicy.RequireUpper}}, uppercase{{end}}{{if .PasswordPolicy.RequireLower}}, lowercase{{end}}{{if .PasswordPolicy.RequireDigit}}, digit{{end}}{{if .PasswordPolicy.RequireSpecial}}, special char{{end}}.
+                </small>
+                {{else}}
+                <small class="form-hint">Minimum 8 characters.</small>
+                {{end}}
+              </div>
+              <div class="mb-3">
+                <label class="form-label required">Confirm Password</label>
+                <div class="input-icon">
+                  <span class="input-icon-addon"><i class="ti ti-lock-check"></i></span>
+                  <input type="password" name="confirm_password" class="form-control" placeholder="Confirm password" required>
+                </div>
+              </div>
+              <div class="form-footer">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="ti ti-user-check"></i> Activate Account
+                </button>
+              </div>
+            </form>
+            {{end}}
+          </div>
+        </div>
+        <div class="text-center text-secondary mt-3">
+          &copy; 2026 Keywarden | AGPLv3
+        </div>
+      </div>
+    </div>
+    <script src="/static/js/tabler.min.js"></script>
+    <script>
+    (function() {
+      var m = document.cookie.match(/(?:^|;\s*)_csrf=([^;]*)/);
+      var token = m ? decodeURIComponent(m[1]) : '';
+      document.querySelectorAll('form').forEach(function(form) {
+        if ((form.method || 'get').toLowerCase() === 'post' && !form.querySelector('input[name="_csrf"]')) {
+          var input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = '_csrf';
+          input.value = token;
+          form.prepend(input);
+        }
+      });
+    })();
+    </script>
+  </body>
+</html>

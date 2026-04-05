@@ -1,0 +1,39 @@
+# Keywarden CI - Pull Request Tests
+# Runs on every PR to master: vet, build, test (with CGO for SQLite)
+name: PR Tests
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Lint, Build & Test
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.26-alpine
+
+    steps:
+      - name: Install build dependencies
+        run: apk add --no-cache gcc musl-dev sqlite-dev git
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Go module cache
+        uses: actions/cache@v4
+        with:
+          path: /go/pkg/mod
+          key: go-mod-${{ hashFiles('go.sum') }}
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Build
+        run: CGO_ENABLED=1 go build -o /dev/null ./cmd/keywarden/
+
+      - name: Run tests
+        run: CGO_ENABLED=1 go test -tags integration ./internal/... -v -count=1 -timeout 120s

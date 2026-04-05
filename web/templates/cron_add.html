@@ -1,0 +1,503 @@
+{{define "content"}}
+<div class="row row-cards">
+  <div class="col-lg-8 col-xl-6 mx-auto">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-clock-plus"></i> New Temporary Access</h3>
+      </div>
+      <div class="card-body">
+        <form action="/cron/add" method="POST" id="cron-form">
+          <!-- Name -->
+          <div class="mb-3">
+            <label class="form-label required">Job Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Temporary deploy access for contractor" required>
+          </div>
+
+          <!-- Target User -->
+          <div class="mb-3">
+            <label class="form-label required"><i class="ti ti-user"></i> Target User</label>
+            <select name="target_user_id" class="form-select" id="cron-target-user" required>
+              <option value="">Choose a user...</option>
+              {{range .AssignAllUsers}}
+              <option value="{{.ID}}">{{.Username}} ({{.Role}})</option>
+              {{end}}
+            </select>
+            <small class="form-hint">Select a KeyWarden user. Their SSH keys will be loaded.</small>
+          </div>
+
+          <!-- SSH Key (loaded via AJAX) -->
+          <div class="mb-3" id="cron-key-wrapper" style="display:none;">
+            <label class="form-label required"><i class="ti ti-key"></i> SSH Key</label>
+            <select name="key_id" class="form-select" id="cron-key-id" required>
+              <option value="">Loading keys...</option>
+            </select>
+            <small class="form-hint">Select the SSH key to deploy for this user.</small>
+          </div>
+
+          <!-- No Keys Warning -->
+          <div class="mb-3" id="cron-no-keys" style="display:none;">
+            <div class="alert alert-warning">
+              <div class="d-flex">
+                <div><i class="ti ti-alert-triangle me-2 fs-2"></i></div>
+                <div>
+                  <h4 class="alert-title">No SSH Keys</h4>
+                  <div>This user has no SSH keys. Please <a href="/keys/generate">generate</a> or <a href="/keys/import">import</a> a key first.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Target Type -->
+          <div class="mb-3">
+            <label class="form-label required"><i class="ti ti-server"></i> Target</label>
+            <div class="row g-2 mb-2">
+              <div class="col-auto">
+                <label class="form-selectgroup-item" style="cursor:pointer;">
+                  <input type="radio" name="target_type" value="host" class="form-selectgroup-input" checked id="target-type-host">
+                  <div class="form-selectgroup-label"><i class="ti ti-server"></i> Single Host</div>
+                </label>
+              </div>
+              <div class="col-auto">
+                <label class="form-selectgroup-item" style="cursor:pointer;">
+                  <input type="radio" name="target_type" value="group" class="form-selectgroup-input" id="target-type-group">
+                  <div class="form-selectgroup-label"><i class="ti ti-folders"></i> Server Group</div>
+                </label>
+              </div>
+            </div>
+            <div id="target-host-select">
+              <select name="server_id" class="form-select" id="cron-server-id">
+                <option value="">Choose a server...</option>
+                {{range .Servers}}
+                <option value="{{.ID}}">{{.Name}} ({{.Hostname}}:{{.Port}})</option>
+                {{end}}
+              </select>
+            </div>
+            <div id="target-group-select" style="display:none;">
+              <select name="group_id" class="form-select" id="cron-group-id">
+                <option value="">Choose a group...</option>
+                {{range .Groups}}
+                <option value="{{.ID}}">{{.Name}}</option>
+                {{end}}
+              </select>
+            </div>
+          </div>
+
+          <!-- System User -->
+          <div class="mb-3">
+            <label class="form-label required"><i class="ti ti-terminal-2"></i> System User</label>
+            <input type="text" name="system_user" class="form-control" placeholder="e.g. deploy, admin, root" required>
+            <small class="form-hint">The Linux user on the target server(s) that will receive the SSH key.</small>
+          </div>
+
+          <!-- Options: Sudo & Create User -->
+          <div class="mb-3">
+            <div class="row g-3">
+              <div class="col-auto">
+                <label class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" name="sudo" id="cron-sudo">
+                  <span class="form-check-label">Grant Sudo</span>
+                </label>
+              </div>
+              <div class="col-auto">
+                <label class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" name="create_user" id="cron-create-user">
+                  <span class="form-check-label">Create User if Missing</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Initial Password (shown when Create User is checked) -->
+          <div class="mb-3" id="cron-initial-pw-wrapper" style="display:none;">
+            <label class="form-label"><i class="ti ti-lock"></i> Initial Password</label>
+            <div class="alert alert-info mb-0">
+              <div class="d-flex align-items-center">
+                <i class="ti ti-info-circle me-2"></i>
+                <span>A secure initial password will be <strong>auto-generated</strong> when the user is created on the target host.</span>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <!-- Timezone -->
+          <div class="mb-3">
+            <label class="form-label required"><i class="ti ti-world"></i> Timezone</label>
+            <select name="timezone" class="form-select" id="cron-timezone" required>
+              <option value="UTC">UTC</option>
+              <option value="Europe/Berlin">Europe/Berlin (CET/CEST)</option>
+              <option value="Europe/London">Europe/London (GMT/BST)</option>
+              <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+              <option value="Europe/Zurich">Europe/Zurich (CET/CEST)</option>
+              <option value="Europe/Vienna">Europe/Vienna (CET/CEST)</option>
+              <option value="Europe/Amsterdam">Europe/Amsterdam (CET/CEST)</option>
+              <option value="Europe/Warsaw">Europe/Warsaw (CET/CEST)</option>
+              <option value="Europe/Moscow">Europe/Moscow (MSK)</option>
+              <option value="America/New_York">America/New_York (EST/EDT)</option>
+              <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+              <option value="America/Denver">America/Denver (MST/MDT)</option>
+              <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+              <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+              <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+              <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+              <option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
+            </select>
+            <small class="form-hint">All times will be interpreted in this timezone. Your browser timezone is auto-detected.</small>
+          </div>
+
+          <!-- Schedule Type -->
+          <div class="mb-3">
+            <label class="form-label required"><i class="ti ti-repeat"></i> Schedule</label>
+            <div class="row g-2">
+              <div class="col">
+                <label class="form-selectgroup-item w-100" style="cursor:pointer;">
+                  <input type="radio" name="schedule" value="once" class="form-selectgroup-input" checked>
+                  <div class="form-selectgroup-label text-center p-2">
+                    <i class="ti ti-clock d-block mb-1 fs-2"></i>
+                    <strong>Once</strong>
+                  </div>
+                </label>
+              </div>
+              <div class="col">
+                <label class="form-selectgroup-item w-100" style="cursor:pointer;">
+                  <input type="radio" name="schedule" value="hourly" class="form-selectgroup-input">
+                  <div class="form-selectgroup-label text-center p-2">
+                    <i class="ti ti-clock-hour-1 d-block mb-1 fs-2"></i>
+                    <strong>Hourly</strong>
+                  </div>
+                </label>
+              </div>
+              <div class="col">
+                <label class="form-selectgroup-item w-100" style="cursor:pointer;">
+                  <input type="radio" name="schedule" value="daily" class="form-selectgroup-input">
+                  <div class="form-selectgroup-label text-center p-2">
+                    <i class="ti ti-sun d-block mb-1 fs-2"></i>
+                    <strong>Daily</strong>
+                  </div>
+                </label>
+              </div>
+              <div class="col">
+                <label class="form-selectgroup-item w-100" style="cursor:pointer;">
+                  <input type="radio" name="schedule" value="weekly" class="form-selectgroup-input">
+                  <div class="form-selectgroup-label text-center p-2">
+                    <i class="ti ti-calendar-week d-block mb-1 fs-2"></i>
+                    <strong>Weekly</strong>
+                  </div>
+                </label>
+              </div>
+              <div class="col">
+                <label class="form-selectgroup-item w-100" style="cursor:pointer;">
+                  <input type="radio" name="schedule" value="monthly" class="form-selectgroup-input">
+                  <div class="form-selectgroup-label text-center p-2">
+                    <i class="ti ti-calendar d-block mb-1 fs-2"></i>
+                    <strong>Monthly</strong>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Schedule: Once — full datetime picker -->
+          <div class="mb-3 schedule-option" id="sched-once">
+            <label class="form-label required">Date & Time</label>
+            <input type="datetime-local" name="scheduled_at" class="form-control" id="cron-scheduled-at">
+            <small class="form-hint">Select the exact date and time for this one-time job.</small>
+          </div>
+
+          <!-- Schedule: Hourly — minute of hour -->
+          <div class="mb-3 schedule-option" id="sched-hourly" style="display:none;">
+            <label class="form-label required">Run at minute</label>
+            <div class="row align-items-center">
+              <div class="col-auto">
+                <span class="text-secondary">Every hour at minute</span>
+              </div>
+              <div class="col-auto">
+                <select name="minute_of_hour" class="form-select" style="width:auto;" id="cron-minute-of-hour">
+                  <option value="0">:00</option>
+                  <option value="5">:05</option>
+                  <option value="10">:10</option>
+                  <option value="15">:15</option>
+                  <option value="20">:20</option>
+                  <option value="25">:25</option>
+                  <option value="30">:30</option>
+                  <option value="35">:35</option>
+                  <option value="40">:40</option>
+                  <option value="45">:45</option>
+                  <option value="50">:50</option>
+                  <option value="55">:55</option>
+                </select>
+              </div>
+            </div>
+            <small class="form-hint">The job will run every hour at the selected minute.</small>
+          </div>
+
+          <!-- Schedule: Daily — time of day -->
+          <div class="mb-3 schedule-option" id="sched-daily" style="display:none;">
+            <label class="form-label required">Time of Day</label>
+            <div class="row align-items-center">
+              <div class="col-auto">
+                <span class="text-secondary">Every day at</span>
+              </div>
+              <div class="col-auto">
+                <input type="time" class="form-control" id="cron-time-daily" value="02:00" style="width:auto;">
+              </div>
+            </div>
+            <small class="form-hint">The job will run every day at this time.</small>
+          </div>
+
+          <!-- Schedule: Weekly — day of week + time -->
+          <div class="mb-3 schedule-option" id="sched-weekly" style="display:none;">
+            <label class="form-label required">Day & Time</label>
+            <div class="row align-items-center g-2">
+              <div class="col-auto">
+                <span class="text-secondary">Every</span>
+              </div>
+              <div class="col-auto">
+                <select name="day_of_week" class="form-select" style="width:auto;" id="cron-day-of-week">
+                  <option value="1">Monday</option>
+                  <option value="2">Tuesday</option>
+                  <option value="3">Wednesday</option>
+                  <option value="4">Thursday</option>
+                  <option value="5">Friday</option>
+                  <option value="6">Saturday</option>
+                  <option value="0">Sunday</option>
+                </select>
+              </div>
+              <div class="col-auto">
+                <span class="text-secondary">at</span>
+              </div>
+              <div class="col-auto">
+                <input type="time" class="form-control" id="cron-time-weekly" value="02:00" style="width:auto;">
+              </div>
+            </div>
+            <small class="form-hint">The job will run every week on the selected day and time.</small>
+          </div>
+
+          <!-- Schedule: Monthly — day of month + time -->
+          <div class="mb-3 schedule-option" id="sched-monthly" style="display:none;">
+            <label class="form-label required">Day & Time</label>
+            <div class="row align-items-center g-2">
+              <div class="col-auto">
+                <span class="text-secondary">On the</span>
+              </div>
+              <div class="col-auto">
+                <select name="day_of_month" class="form-select" style="width:auto;" id="cron-day-of-month">
+                  {{range $i := .DaysOfMonth}}
+                  <option value="{{$i}}">{{$i}}.</option>
+                  {{end}}
+                </select>
+              </div>
+              <div class="col-auto">
+                <span class="text-secondary">of each month at</span>
+              </div>
+              <div class="col-auto">
+                <input type="time" class="form-control" id="cron-time-monthly" value="02:00" style="width:auto;">
+              </div>
+            </div>
+            <small class="form-hint">The job will run monthly on the selected day. If the day doesn't exist (e.g. 31st in February), it runs on the last day of the month.</small>
+          </div>
+
+          <!-- Next Run Preview -->
+          <div class="mb-3" id="next-run-preview" style="display:none;">
+            <div class="alert alert-info">
+              <div class="d-flex">
+                <div><i class="ti ti-info-circle me-2 fs-2"></i></div>
+                <div>
+                  <h4 class="alert-title">Schedule Preview</h4>
+                  <div id="next-run-text"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <!-- Auto-remove -->
+          <div class="mb-3">
+            <label class="form-label"><i class="ti ti-hourglass"></i> Auto-Remove After (minutes)</label>
+            <input type="number" name="remove_after_min" class="form-control" min="0" value="0" placeholder="0 = keep permanently">
+            <small class="form-hint">Set to 0 to keep the access permanently. E.g., 120 = revoke access after 2 hours.</small>
+          </div>
+
+          <!-- Expiry Action -->
+          <div class="mb-3">
+            <label class="form-label"><i class="ti ti-shield-off"></i> On Expiry</label>
+            <select name="expiry_action" class="form-select" id="cron-expiry-action">
+              <option value="remove_key" selected>Remove SSH Key only</option>
+              <option value="disable_user">Disable User (lock account + nologin)</option>
+              <option value="delete_user">Delete User (remove system user completely)</option>
+            </select>
+            <small class="form-hint">What happens when the temporary access expires.</small>
+          </div>
+
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="ti ti-clock-plus"></i> Create Temporary Access
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Target user change: load SSH keys via AJAX
+  var userSelect = document.getElementById('cron-target-user');
+  var keySelect = document.getElementById('cron-key-id');
+  var keyWrapper = document.getElementById('cron-key-wrapper');
+  var noKeys = document.getElementById('cron-no-keys');
+
+  userSelect.addEventListener('change', function() {
+    var userId = this.value;
+    keyWrapper.style.display = 'none';
+    noKeys.style.display = 'none';
+
+    if (!userId) return;
+
+    keySelect.innerHTML = '<option value="">Loading...</option>';
+    keyWrapper.style.display = 'block';
+
+    fetch('/api/cron/keys?user_id=' + userId)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var keys = data || [];
+        keySelect.innerHTML = '<option value="">Choose a key...</option>';
+
+        if (keys.length === 0) {
+          keyWrapper.style.display = 'none';
+          noKeys.style.display = 'block';
+          return;
+        }
+
+        keys.forEach(function(k) {
+          var opt = document.createElement('option');
+          opt.value = k.id;
+          opt.textContent = k.name + ' (' + k.key_type + ')';
+          keySelect.appendChild(opt);
+        });
+      })
+      .catch(function() {
+        keySelect.innerHTML = '<option value="">Failed to load keys</option>';
+      });
+  });
+
+  // Target type toggle
+  document.getElementById('target-type-host').addEventListener('change', function() {
+    document.getElementById('target-host-select').style.display = 'block';
+    document.getElementById('target-group-select').style.display = 'none';
+  });
+  document.getElementById('target-type-group').addEventListener('change', function() {
+    document.getElementById('target-host-select').style.display = 'none';
+    document.getElementById('target-group-select').style.display = 'block';
+  });
+
+  // Create user toggle → show initial password
+  document.getElementById('cron-create-user').addEventListener('change', function() {
+    document.getElementById('cron-initial-pw-wrapper').style.display = this.checked ? 'block' : 'none';
+  });
+
+  // Schedule type toggle
+  var scheduleOptions = ['once', 'hourly', 'daily', 'weekly', 'monthly'];
+  function updateScheduleUI() {
+    var selected = document.querySelector('input[name="schedule"]:checked').value;
+    scheduleOptions.forEach(function(opt) {
+      var el = document.getElementById('sched-' + opt);
+      if (el) el.style.display = (opt === selected) ? 'block' : 'none';
+    });
+    updatePreview();
+  }
+
+  document.querySelectorAll('input[name="schedule"]').forEach(function(el) {
+    el.addEventListener('change', updateScheduleUI);
+  });
+
+  // Auto-detect timezone
+  try {
+    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    var tzSelect = document.getElementById('cron-timezone');
+    for (var i = 0; i < tzSelect.options.length; i++) {
+      if (tzSelect.options[i].value === tz) {
+        tzSelect.value = tz;
+        break;
+      }
+    }
+  } catch(e) {}
+
+  // Preview generation
+  var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function updatePreview() {
+    var schedule = document.querySelector('input[name="schedule"]:checked').value;
+    var tz = document.getElementById('cron-timezone').value;
+    var previewEl = document.getElementById('next-run-preview');
+    var textEl = document.getElementById('next-run-text');
+    var text = '';
+
+    switch(schedule) {
+      case 'once':
+        var dt = document.getElementById('cron-scheduled-at').value;
+        if (dt) {
+          text = 'Runs once on <strong>' + dt.replace('T', ' at ') + '</strong> (' + tz + ')';
+        }
+        break;
+      case 'hourly':
+        var min = document.getElementById('cron-minute-of-hour').value;
+        text = 'Runs <strong>every hour at :' + String(min).padStart(2, '0') + '</strong> (' + tz + ')';
+        break;
+      case 'daily':
+        var time = document.getElementById('cron-time-daily').value || '02:00';
+        text = 'Runs <strong>every day at ' + time + '</strong> (' + tz + ')';
+        break;
+      case 'weekly':
+        var dow = document.getElementById('cron-day-of-week').value;
+        var time = document.getElementById('cron-time-weekly').value || '02:00';
+        text = 'Runs <strong>every ' + dayNames[dow] + ' at ' + time + '</strong> (' + tz + ')';
+        break;
+      case 'monthly':
+        var dom = document.getElementById('cron-day-of-month').value;
+        var time = document.getElementById('cron-time-monthly').value || '02:00';
+        text = 'Runs <strong>on the ' + dom + '. of each month at ' + time + '</strong> (' + tz + ')';
+        break;
+    }
+
+    if (text) {
+      previewEl.style.display = 'block';
+      textEl.innerHTML = text;
+    } else {
+      previewEl.style.display = 'none';
+    }
+  }
+
+  // Listen for changes on all schedule inputs
+  document.querySelectorAll('#cron-scheduled-at, #cron-minute-of-hour, #cron-time-daily, #cron-time-weekly, #cron-day-of-week, #cron-time-monthly, #cron-day-of-month, #cron-timezone').forEach(function(el) {
+    el.addEventListener('change', updatePreview);
+    el.addEventListener('input', updatePreview);
+  });
+
+  // Consolidate time_of_day fields before submit
+  document.getElementById('cron-form').addEventListener('submit', function(e) {
+    var schedule = document.querySelector('input[name="schedule"]:checked').value;
+    var existing = document.querySelector('input[name="time_of_day"][type="hidden"]');
+    if (existing) existing.remove();
+    var hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'time_of_day';
+
+    if (schedule === 'daily') {
+      hidden.value = document.getElementById('cron-time-daily').value || '02:00';
+    } else if (schedule === 'weekly') {
+      hidden.value = document.getElementById('cron-time-weekly').value || '02:00';
+    } else if (schedule === 'monthly') {
+      hidden.value = document.getElementById('cron-time-monthly').value || '02:00';
+    } else {
+      hidden.value = '00:00';
+    }
+    this.appendChild(hidden);
+  });
+
+  // Initialize
+  updateScheduleUI();
+})();
+</script>
+{{end}}

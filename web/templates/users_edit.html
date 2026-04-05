@@ -1,0 +1,104 @@
+{{define "content"}}
+<div class="row row-deck row-cards">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-user-edit"></i> Edit User</h3>
+      </div>
+      <div class="card-body">
+        {{if .EditUser}}
+        <form action="/users/{{.EditUser.ID}}/edit" method="post" autocomplete="off">
+          <div class="mb-3">
+            <label class="form-label required">Username</label>
+            <div class="input-icon">
+              <span class="input-icon-addon"><i class="ti ti-user"></i></span>
+              <input type="text" name="username" class="form-control" value="{{.EditUser.Username}}" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Email</label>
+            <div class="input-icon">
+              <span class="input-icon-addon"><i class="ti ti-mail"></i></span>
+              <input type="email" name="email" class="form-control" value="{{.EditUser.Email}}" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">New Password</label>
+            <div class="input-icon">
+              <span class="input-icon-addon"><i class="ti ti-lock"></i></span>
+              <input type="password" name="password" class="form-control" placeholder="Leave empty to keep current" minlength="{{if .PasswordPolicy}}{{.PasswordPolicy.MinLength}}{{else}}8{{end}}">
+            </div>
+            {{if .PasswordPolicy}}
+            <small class="form-hint">
+              Min. {{.PasswordPolicy.MinLength}} characters{{if .PasswordPolicy.RequireUpper}}, uppercase{{end}}{{if .PasswordPolicy.RequireLower}}, lowercase{{end}}{{if .PasswordPolicy.RequireDigit}}, digit{{end}}{{if .PasswordPolicy.RequireSpecial}}, special char{{end}}. Leave empty to keep current.
+            </small>
+            {{else}}
+            <small class="form-hint">Leave empty to keep the current password.</small>
+            {{end}}
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Role</label>
+            <select name="role" class="form-select">
+              <option value="user" {{if eq .EditUser.Role "user"}}selected{{end}}>User</option>
+              {{with $.User}}
+              {{if eq .Role "owner"}}
+              <option value="admin" {{if eq $.EditUser.Role "admin"}}selected{{end}}>Admin</option>
+              <option value="owner" {{if eq $.EditUser.Role "owner"}}selected{{end}}>Owner</option>
+              {{end}}
+              {{end}}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">MFA Status</label>
+            <div>
+              {{if .EditUser.MFAEnabled}}
+              <span class="badge bg-green-lt"><i class="ti ti-shield-check"></i> MFA Enabled</span>
+              {{else}}
+              <span class="badge bg-secondary-lt"><i class="ti ti-shield-off"></i> MFA Disabled</span>
+              {{end}}
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="must_change_password" value="1" {{if .EditUser.MustChangePassword}}checked{{end}}>
+              <span class="form-check-label">Force password change</span>
+              <span class="form-check-description">User must change their password on next login.</span>
+            </label>
+          </div>
+          {{if .EditUser.LockedUntil}}
+          <div class="mb-3">
+            <div class="alert alert-danger mb-0">
+              <div class="d-flex align-items-center">
+                <div class="me-3"><i class="ti ti-lock icon alert-icon"></i></div>
+                <div class="flex-fill">
+                  <strong>Account locked</strong> until {{.EditUser.LockedUntil.Format "2006-01-02 15:04"}} ({{.EditUser.FailedLoginAttempts}} failed attempts)
+                </div>
+              </div>
+            </div>
+          </div>
+          {{end}}
+          <div class="form-footer">
+            <a href="/users" class="btn btn-outline-secondary me-2">
+              <i class="ti ti-arrow-left"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-device-floppy"></i> Save Changes
+            </button>
+          </div>
+        </form>
+        {{if .EditUser.LockedUntil}}
+        <hr>
+        <form method="POST" action="/users/{{.EditUser.ID}}/unlock" onsubmit="return confirm('Unlock this account?')">
+          <button type="submit" class="btn btn-warning">
+            <i class="ti ti-lock-open"></i> Unlock Account
+          </button>
+        </form>
+        {{end}}
+        {{else}}
+        <p class="text-secondary">User not found.</p>
+        {{end}}
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

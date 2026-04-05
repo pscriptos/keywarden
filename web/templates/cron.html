@@ -1,0 +1,181 @@
+{{define "content"}}
+<div class="row row-cards">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-clock"></i> Temporary Access</h3>
+        <div class="card-actions">
+          <a href="/cron/add" class="btn btn-primary">
+            <i class="ti ti-plus"></i> New Access
+          </a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>User</th>
+              <th>Key</th>
+              <th>Target</th>
+              <th>System User</th>
+              <th>Password</th>
+              <th>Schedule</th>
+              <th>Auto-Remove</th>
+              <th>On Expiry</th>
+              <th>Next Run</th>
+              <th>Last Run</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .CronJobs}}
+            <tr>
+              <td><strong>{{.Name}}</strong></td>
+              <td>
+                {{if .TargetUsername}}
+                <i class="ti ti-user"></i> {{.TargetUsername}}
+                {{else}}
+                <span class="text-secondary">—</span>
+                {{end}}
+              </td>
+              <td><span class="badge bg-blue-lt">{{.KeyName}}</span></td>
+              <td>
+                {{if eq .TargetType "host"}}
+                <i class="ti ti-server"></i> {{.TargetName}}
+                {{else}}
+                <i class="ti ti-folders"></i> {{.TargetName}}
+                {{end}}
+              </td>
+              <td>
+                {{if .SystemUser}}
+                <code>{{.SystemUser}}</code>
+                {{else}}
+                <span class="text-secondary">root</span>
+                {{end}}
+              </td>
+              <td>
+                {{if .InitialPassword}}
+                <span class="d-inline-flex align-items-center">
+                  <code class="cron-pw-hidden" id="cron-pw-hidden-{{.ID}}">••••••••••</code>
+                  <code class="cron-pw-visible d-none" id="cron-pw-visible-{{.ID}}">{{.InitialPassword}}</code>
+                  <button class="btn btn-sm btn-icon btn-ghost-secondary ms-1" type="button" onclick="toggleCronPassword({{.ID}})" title="Show/Hide password">
+                    <i class="ti ti-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('cron-pw-visible-{{.ID}}').textContent); this.innerHTML='<i class=\'ti ti-check\'></i>'; setTimeout(()=>this.innerHTML='<i class=\'ti ti-copy\'></i>', 2000);" title="Copy password">
+                    <i class="ti ti-copy"></i>
+                  </button>
+                </span>
+                {{else}}
+                <span class="text-secondary">—</span>
+                {{end}}
+              </td>
+              <td>
+                {{if eq .Schedule "once"}}
+                <span class="badge bg-cyan-lt"><i class="ti ti-clock"></i> Once</span>
+                {{else if eq .Schedule "hourly"}}
+                <span class="badge bg-orange-lt"><i class="ti ti-clock-hour-1"></i> Hourly at :{{printf "%02d" .MinuteOfHour}}</span>
+                {{else if eq .Schedule "daily"}}
+                <span class="badge bg-green-lt"><i class="ti ti-sun"></i> Daily at {{.TimeOfDay}}</span>
+                {{else if eq .Schedule "weekly"}}
+                <span class="badge bg-purple-lt"><i class="ti ti-calendar-week"></i> Weekly — {{.TimeOfDay}}</span>
+                {{else if eq .Schedule "monthly"}}
+                <span class="badge bg-pink-lt"><i class="ti ti-calendar"></i> Monthly on {{.DayOfMonth}}. — {{.TimeOfDay}}</span>
+                {{end}}
+                {{if and .Timezone (ne .Timezone "UTC")}}
+                <br><small class="text-secondary"><i class="ti ti-world"></i> {{.Timezone}}</small>
+                {{end}}
+              </td>
+              <td>
+                {{if gt .RemoveAfterMin 0}}
+                <span class="badge bg-yellow-lt">{{.RemoveAfterMin}} min</span>
+                {{else}}
+                <span class="text-secondary">—</span>
+                {{end}}
+              </td>
+              <td>
+                {{if eq .ExpiryAction "remove_key"}}
+                <span class="badge bg-blue-lt"><i class="ti ti-key-off"></i> Remove Key</span>
+                {{else if eq .ExpiryAction "disable_user"}}
+                <span class="badge bg-warning-lt"><i class="ti ti-user-off"></i> Disable User</span>
+                {{else if eq .ExpiryAction "delete_user"}}
+                <span class="badge bg-danger-lt"><i class="ti ti-user-minus"></i> Delete User</span>
+                {{else}}
+                <span class="text-secondary">—</span>
+                {{end}}
+              </td>
+              <td>
+                {{if eq .Status "done"}}
+                <span class="text-secondary">—</span>
+                {{else}}
+                {{.NextRun.Format "2006-01-02 15:04"}} <small class="text-secondary">UTC</small>
+                {{end}}
+              </td>
+              <td>
+                {{if .LastRun}}
+                {{.LastRun.Format "2006-01-02 15:04"}} <small class="text-secondary">UTC</small>
+                {{else}}
+                <span class="text-secondary">never</span>
+                {{end}}
+              </td>
+              <td>
+                {{if eq .Status "active"}}
+                <span class="badge bg-success-lt"><i class="ti ti-check"></i> Active</span>
+                {{else if eq .Status "paused"}}
+                <span class="badge bg-warning-lt"><i class="ti ti-player-pause"></i> Paused</span>
+                {{else if eq .Status "running"}}
+                <span class="badge bg-blue-lt"><i class="ti ti-loader"></i> Running</span>
+                {{else if eq .Status "done"}}
+                <span class="badge bg-secondary-lt"><i class="ti ti-check"></i> Done</span>
+                {{else if eq .Status "failed"}}
+                <span class="badge bg-danger-lt"><i class="ti ti-x"></i> Failed</span>
+                {{end}}
+              </td>
+              <td class="text-end">
+                <div class="btn-list flex-nowrap justify-content-end">
+                  {{if or (eq .Status "active") (eq .Status "paused")}}
+                  <form method="POST" action="/cron/{{.ID}}/toggle" class="d-inline">
+                    {{if eq .Status "active"}}
+                    <button type="submit" class="btn btn-sm btn-icon btn-outline-warning" title="Pause">
+                      <i class="ti ti-player-pause"></i>
+                    </button>
+                    {{else}}
+                    <button type="submit" class="btn btn-sm btn-icon btn-outline-success" title="Resume">
+                      <i class="ti ti-player-play"></i>
+                    </button>
+                    {{end}}
+                  </form>
+                  {{end}}
+                  <a href="/cron/{{.ID}}/edit" class="btn btn-sm btn-icon btn-outline-primary" title="Edit">
+                    <i class="ti ti-edit"></i>
+                  </a>
+                  <form method="POST" action="/cron/{{.ID}}/delete" class="d-inline" onsubmit="return confirm('Delete this job?');">
+                    <button type="submit" class="btn btn-sm btn-icon btn-outline-danger" title="Delete">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="13" class="text-center text-secondary">No temporary access jobs yet. Create one to grant time-limited access.</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleCronPassword(id) {
+  var hidden = document.getElementById('cron-pw-hidden-' + id);
+  var visible = document.getElementById('cron-pw-visible-' + id);
+  hidden.classList.toggle('d-none');
+  visible.classList.toggle('d-none');
+}
+</script>
+{{end}}

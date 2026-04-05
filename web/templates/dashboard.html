@@ -1,0 +1,223 @@
+{{define "content"}}
+<div class="row row-deck row-cards g-3">
+
+  <!-- ═══ Stat Cards Row ═══ -->
+  <div class="col-6 col-sm-4 col-lg-2">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="text-secondary mb-1"><i class="ti ti-key"></i> SSH Keys</div>
+        <div class="h1 mb-0">{{.KeyCount}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-lg-2">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="text-secondary mb-1"><i class="ti ti-server"></i> Hosts</div>
+        <div class="h1 mb-0">{{.ServerCount}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-lg-2">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="text-secondary mb-1"><i class="ti ti-folders"></i> Server Groups</div>
+        <div class="h1 mb-0">{{.GroupCount}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-lg-2">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="text-secondary mb-1"><i class="ti ti-send"></i> Deployments</div>
+        <div class="h1 mb-0">{{.DeployCount}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-lg-2">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="text-secondary mb-1"><i class="ti ti-shield-lock"></i> Assignments</div>
+        <div class="h1 mb-0">{{.AssignmentCount}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-lg-2">
+    <div class="card">
+      <div class="card-body text-center">
+        {{if eq .UserRole "admin"}}
+        <div class="text-secondary mb-1"><i class="ti ti-users"></i> Users</div>
+        <div class="h1 mb-0">{{.UserCount}}</div>
+        {{else}}
+        <div class="text-secondary mb-1"><i class="ti ti-clock"></i> Temporary Access</div>
+        <div class="h1 mb-0">{{.CronCount}}</div>
+        {{end}}
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Quick Actions ═══ -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-bolt"></i> Quick Actions</h3>
+      </div>
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <a href="/keys/generate" class="btn btn-outline-primary w-100">
+              <i class="ti ti-key"></i> Generate Key
+            </a>
+          </div>
+          <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <a href="/keys/import" class="btn btn-outline-primary w-100">
+              <i class="ti ti-file-import"></i> Import Key
+            </a>
+          </div>
+          {{if ne .UserRole "user"}}
+          <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <a href="/servers/add" class="btn btn-outline-primary w-100">
+              <i class="ti ti-server"></i> Add Host
+            </a>
+          </div>
+          <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <a href="/deploy" class="btn btn-outline-primary w-100">
+              <i class="ti ti-send"></i> Deploy Keys
+            </a>
+          </div>
+          <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <a href="/cron/add" class="btn btn-outline-primary w-100">
+              <i class="ti ti-clock-plus"></i> Temporary Access
+            </a>
+          </div>
+          <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <a href="/assignments/add" class="btn btn-outline-primary w-100">
+              <i class="ti ti-shield-plus"></i> New Assignment
+            </a>
+          </div>
+          {{end}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Recent SSH Keys ═══ -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-key"></i> Recent SSH Keys</h3>
+        <div class="card-actions">
+          <a href="/keys" class="btn btn-outline-primary btn-sm">View All</a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Fingerprint</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .RecentKeys}}
+            <tr>
+              <td>{{.Name}}</td>
+              <td><span class="badge bg-azure-lt">{{.KeyType}}</span></td>
+              <td><code>{{.Fingerprint}}</code></td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="3" class="text-center text-secondary">No SSH keys yet. <a href="/keys/generate">Generate one!</a></td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Recent Deployments ═══ -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-send"></i> Recent Deployments</h3>
+        <div class="card-actions">
+          <a href="/deploy" class="btn btn-outline-primary btn-sm">View All</a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Server</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .RecentDeploys}}
+            <tr>
+              <td>{{index . "key_name"}}</td>
+              <td>{{index . "server_name"}}</td>
+              <td>
+                {{if eq (index . "status") "success"}}
+                <span class="badge bg-success-lt"><i class="ti ti-check"></i> Success</span>
+                {{else}}
+                <span class="badge bg-danger-lt"><i class="ti ti-x"></i> Failed</span>
+                {{end}}
+              </td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="3" class="text-center text-secondary">No deployments yet.</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Recent Activity (Audit Log) ═══ -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-history"></i> Recent Activity</h3>
+        <div class="card-actions">
+          <a href="/audit" class="btn btn-outline-primary btn-sm">View All</a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>User</th>
+              <th>Action</th>
+              <th>Details</th>
+              <th>IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .RecentAudit}}
+            <tr>
+              <td class="text-nowrap">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              <td>{{.Username}}</td>
+              <td><span class="badge bg-secondary-lt">{{.Action}}</span></td>
+              <td class="text-truncate" style="max-width: 300px;">{{.Details}}</td>
+              <td><code>{{.IPAddress}}</code></td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="5" class="text-center text-secondary">No activity recorded yet.</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{{end}}

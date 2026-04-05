@@ -1,0 +1,259 @@
+{{define "content"}}
+<div class="row row-deck row-cards">
+  {{/* Show assigned hosts for User role */}}
+  {{if and (eq .User.Role "user") .Servers}}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-server"></i> My Assigned Hosts</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Host</th>
+              <th>Port</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Servers}}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="ti ti-server me-2 text-primary"></i>
+                  <strong>{{.Name}}</strong>
+                </div>
+              </td>
+              <td><code>{{.Hostname}}</code></td>
+              <td>{{.Port}}</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {{end}}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-shield-lock"></i> {{if eq .User.Role "user"}}My Access Assignments{{else}}Access Assignments{{end}}</h3>
+        {{if or (eq .User.Role "admin") (eq .User.Role "owner")}}
+        <div class="card-actions">
+          <a href="/assignments/add" class="btn btn-primary">
+            <i class="ti ti-plus"></i> Create Assignment
+          </a>
+        </div>
+        {{end}}
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              {{if or (eq $.User.Role "admin") (eq $.User.Role "owner")}}
+              <th>ID</th>
+              <th>User</th>
+              {{end}}
+              <th>SSH Key</th>
+              <th>Target</th>
+              <th>System User</th>
+              <th>State</th>
+              <th>Options</th>
+              <th>Password</th>
+              <th>Status</th>
+              <th>Created</th>
+              {{if or (eq $.User.Role "admin") (eq $.User.Role "owner")}}
+              <th class="w-1">Actions</th>
+              {{end}}
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Assignments}}
+            <tr>
+              {{if or (eq $.User.Role "admin") (eq $.User.Role "owner")}}
+              <td>{{.ID}}</td>
+              <td><i class="ti ti-user"></i> {{.Username}}</td>
+              {{end}}
+              <td><i class="ti ti-key"></i> {{.KeyName}}</td>
+              <td>
+                {{if eq .TargetType "host"}}
+                <span class="badge bg-blue-lt"><i class="ti ti-server"></i> {{.TargetName}}</span>
+                {{else if eq .TargetType "group"}}
+                <span class="badge bg-purple-lt"><i class="ti ti-folders"></i> {{.TargetName}}</span>
+                {{else}}
+                <span class="text-secondary">–</span>
+                {{end}}
+              </td>
+              <td><code>{{.SystemUser}}</code></td>
+              <td>
+                {{if eq .DesiredState "present"}}
+                <span class="badge bg-green-lt">Present</span>
+                {{else}}
+                <span class="badge bg-red-lt">Absent</span>
+                {{end}}
+              </td>
+              <td>
+                {{if .Sudo}}<span class="badge bg-orange-lt" title="Sudo enabled"><i class="ti ti-shield-check"></i> Sudo</span> {{end}}
+                {{if .CreateUser}}<span class="badge bg-cyan-lt" title="Create system user"><i class="ti ti-user-plus"></i> Create</span>{{end}}
+                {{if and (not .Sudo) (not .CreateUser)}}<span class="text-secondary">–</span>{{end}}
+              </td>
+              <td>
+                {{if .InitialPassword}}
+                <div class="d-flex align-items-center">
+                  <code class="initial-pw-hidden" id="pw-hidden-{{.ID}}">••••••••••</code>
+                  <code class="initial-pw-visible d-none" id="pw-visible-{{.ID}}">{{.InitialPassword}}</code>
+                  <button class="btn btn-sm btn-icon btn-ghost-secondary ms-1" type="button" onclick="togglePassword({{.ID}})" title="Show/Hide password">
+                    <i class="ti ti-eye" id="pw-icon-{{.ID}}"></i>
+                  </button>
+                  <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('pw-visible-{{.ID}}').textContent); this.innerHTML='<i class=\'ti ti-check\'></i>'; setTimeout(()=>this.innerHTML='<i class=\'ti ti-copy\'></i>', 2000);" title="Copy password">
+                    <i class="ti ti-copy"></i>
+                  </button>
+                </div>
+                {{else}}
+                <span class="text-secondary">–</span>
+                {{end}}
+              </td>
+              <td>
+                {{if eq .Status "synced"}}
+                <span class="badge bg-green-lt"><i class="ti ti-check"></i> Synced</span>
+                {{else if eq .Status "failed"}}
+                <span class="badge bg-red-lt"><i class="ti ti-x"></i> Failed</span>
+                {{else}}
+                <span class="badge bg-yellow-lt"><i class="ti ti-clock"></i> Pending</span>
+                {{end}}
+              </td>
+              <td class="text-secondary">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              {{if or (eq $.User.Role "admin") (eq $.User.Role "owner")}}
+              <td>
+                <div class="btn-list flex-nowrap">
+                  <a href="/assignments/{{.ID}}/edit" class="btn btn-sm btn-icon btn-outline-primary" title="Edit">
+                    <i class="ti ti-edit"></i>
+                  </a>
+                  <form method="POST" action="/assignments/{{.ID}}/sync" class="d-inline" onsubmit="return confirm('Sync this assignment now using the system master key?')">
+                    <button type="submit" class="btn btn-sm btn-icon btn-outline-success" title="Sync / Deploy (uses system master key)">
+                      <i class="ti ti-refresh"></i>
+                    </button>
+                  </form>
+                  <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Delete"
+                    onclick="openDeleteModal({{.ID}}, '{{.SystemUser}}', '{{.TargetName}}', {{.CreateUser}})">
+                    <i class="ti ti-trash"></i>
+                  </button>
+                </div>
+              </td>
+              {{end}}
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="{{if or (eq $.User.Role "admin") (eq $.User.Role "owner")}}11{{else}}8{{end}}" class="text-center text-secondary">
+                {{if eq $.User.Role "user"}}No access assignments found for your account.{{else}}No access assignments found. <a href="/assignments/add">Create the first one</a>.{{end}}
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function togglePassword(id) {
+  var hidden = document.getElementById('pw-hidden-' + id);
+  var visible = document.getElementById('pw-visible-' + id);
+  var icon = document.getElementById('pw-icon-' + id);
+  if (visible.classList.contains('d-none')) {
+    visible.classList.remove('d-none');
+    hidden.classList.add('d-none');
+    icon.className = 'ti ti-eye-off';
+  } else {
+    visible.classList.add('d-none');
+    hidden.classList.remove('d-none');
+    icon.className = 'ti ti-eye';
+  }
+}
+
+function openDeleteModal(assignID, systemUser, targetName, wasCreated) {
+  document.getElementById('deleteAssignForm').action = '/assignments/' + assignID + '/delete';
+  document.getElementById('deleteModalSystemUser').textContent = systemUser;
+  document.getElementById('deleteModalTarget').textContent = targetName;
+
+  var deleteUserSection = document.getElementById('deleteUserSection');
+  var deleteUserCheckbox = document.getElementById('deleteUserCheckbox');
+
+  // Only show user deletion option if the user was created by the assignment and is not root
+  if (wasCreated && systemUser !== 'root') {
+    deleteUserSection.classList.remove('d-none');
+    deleteUserCheckbox.checked = false;
+  } else {
+    deleteUserSection.classList.add('d-none');
+    deleteUserCheckbox.checked = false;
+  }
+
+  // Update the warning text based on checkbox state
+  updateDeleteWarning();
+
+  var modal = new bootstrap.Modal(document.getElementById('deleteAssignModal'));
+  modal.show();
+}
+
+function updateDeleteWarning() {
+  var checkbox = document.getElementById('deleteUserCheckbox');
+  var warningText = document.getElementById('deleteWarningText');
+  var warningBox = document.getElementById('deleteWarningBox');
+
+  if (checkbox.checked) {
+    warningText.innerHTML = '<strong>Warning:</strong> The system user will be completely removed from the server, including their home directory, sudo rights, and SSH keys. This action cannot be undone!';
+    warningBox.className = 'alert alert-danger';
+  } else {
+    warningText.innerHTML = 'The SSH key will be removed from the server. The system user will remain on the server.';
+    warningBox.className = 'alert alert-info';
+  }
+}
+
+// Move delete modal to body so it is not clipped by overflow containers
+document.addEventListener('DOMContentLoaded', function() {
+  var modal = document.getElementById('deleteAssignModal');
+  if (modal) {
+    document.body.appendChild(modal);
+  }
+});
+</script>
+
+<!-- Delete Assignment Modal -->
+<div class="modal modal-blur fade" id="deleteAssignModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form method="POST" id="deleteAssignForm" action="">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="ti ti-alert-triangle text-danger"></i> Delete Access Assignment</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>You are about to delete the assignment for system user <strong><code id="deleteModalSystemUser"></code></strong> on target <strong id="deleteModalTarget"></strong>.</p>
+
+          <div id="deleteWarningBox" class="alert alert-info">
+            <span id="deleteWarningText">The SSH key will be removed from the server. The system user will remain on the server.</span>
+          </div>
+
+          <div id="deleteUserSection" class="d-none">
+            <hr>
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="delete_user" id="deleteUserCheckbox" value="on" onchange="updateDeleteWarning()">
+              <span class="form-check-label">
+                <strong>Also delete the Linux system user</strong><br>
+                <small class="text-secondary">Removes the user account, home directory, sudo rights, and all SSH keys from the server.</small>
+              </span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">
+            <i class="ti ti-trash"></i> Delete Assignment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{{end}}

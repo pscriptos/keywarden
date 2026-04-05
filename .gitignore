@@ -1,0 +1,43 @@
+# Binaries
+/keywarden
+/keywarden.exe
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build output
+/build/
+/dist/
+
+# Go
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# App data (runtime)
+/data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Environment
+.env
+.env.local
+
+# Keys (never commit private keys!)
+*.pem
+*.key
+id_rsa
+id_ed25519

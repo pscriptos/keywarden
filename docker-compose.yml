@@ -1,0 +1,21 @@
+services:
+  keywarden:
+    build: .
+    container_name: keywarden
+    restart: unless-stopped
+    ports:
+      - "${KEYWARDEN_PORT:-8080}:${KEYWARDEN_PORT:-8080}"
+    volumes:
+      - keywarden_data:/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${KEYWARDEN_PORT:-8080}/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  keywarden_data:
+    driver: local

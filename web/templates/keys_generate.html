@@ -1,0 +1,95 @@
+{{define "content"}}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-plus"></i> Generate New SSH Key</h3>
+      </div>
+      <div class="card-body">
+        <form action="/keys/generate" method="POST">
+          {{if .Users}}
+          <div class="mb-3">
+            <label class="form-label required">Generate for User</label>
+            <select name="target_user_id" class="form-select">
+              {{$currentUser := .User}}
+              {{range .Users}}
+              <option value="{{.ID}}" {{if eq .ID $currentUser.ID}}selected{{end}}>{{.Username}} ({{.Role}})</option>
+              {{end}}
+            </select>
+            <small class="form-hint">As admin you can generate SSH keys for any user</small>
+          </div>
+          {{end}}
+          <div class="mb-3">
+            <label class="form-label required">Key Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. production-server" required>
+            <small class="form-hint">A friendly name to identify this key</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Key Comment</label>
+            <input type="text" name="comment" class="form-control" placeholder="e.g. user@hostname">
+            <small class="form-hint">Comment appended to the public key (visible in authorized_keys and with <code>ssh-keygen -l</code>)</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Key Type</label>
+            <div class="row g-3">
+              <div class="col-lg-4 col-md-4 col-sm-12">
+                <label class="form-selectgroup-item" style="margin:0; width:100%; height:100%;">
+                  <input type="radio" name="key_type" value="ed25519" class="form-selectgroup-input" checked>
+                  <span class="form-selectgroup-label d-flex flex-column align-items-center text-center p-3" style="width:100%; height:100%; border-radius:.5rem; cursor:pointer;">
+                    <span class="mb-2" style="font-size:2rem; line-height:1;"><i class="ti ti-shield-check text-success"></i></span>
+                    <span class="fw-bold mb-1">Ed25519</span>
+                    <small class="text-secondary">Modern, fast, secure (recommended)</small>
+                    <span class="badge bg-success-lt text-success mt-2">Recommended</span>
+                  </span>
+                </label>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-12">
+                <label class="form-selectgroup-item" style="margin:0; width:100%; height:100%;">
+                  <input type="radio" name="key_type" value="ed448" class="form-selectgroup-input">
+                  <span class="form-selectgroup-label d-flex flex-column align-items-center text-center p-3" style="width:100%; height:100%; border-radius:.5rem; cursor:pointer;">
+                    <span class="mb-2" style="font-size:2rem; line-height:1;"><i class="ti ti-shield-lock text-azure"></i></span>
+                    <span class="fw-bold mb-1">Ed448</span>
+                    <small class="text-secondary">448-bit Edwards curve, higher security margin</small>
+                  </span>
+                </label>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-12">
+                <label class="form-selectgroup-item" style="margin:0; width:100%; height:100%;">
+                  <input type="radio" name="key_type" value="rsa" class="form-selectgroup-input">
+                  <span class="form-selectgroup-label d-flex flex-column align-items-center text-center p-3" style="width:100%; height:100%; border-radius:.5rem; cursor:pointer;">
+                    <span class="mb-2" style="font-size:2rem; line-height:1;"><i class="ti ti-shield text-orange"></i></span>
+                    <span class="fw-bold mb-1">RSA</span>
+                    <small class="text-secondary">Legacy, wide compatibility</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3" id="rsa-bits-group" style="display:none;">
+            <label class="form-label">RSA Key Size</label>
+            <select name="bits" class="form-select">
+              <option value="4096" selected>4096 bits (recommended)</option>
+              <option value="2048">2048 bits (legacy)</option>
+            </select>
+          </div>
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-key"></i> Generate Key
+            </button>
+            <a href="/keys" class="btn btn-outline-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('input[name="key_type"]').forEach(function(el) {
+  el.addEventListener('change', function() {
+    document.getElementById('rsa-bits-group').style.display = 
+      this.value === 'rsa' ? 'block' : 'none';
+  });
+});
+</script>
+{{end}}

@@ -1,0 +1,63 @@
+{{define "content"}}
+<div class="row row-cards">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-folders"></i> Groups</h3>
+        <div class="card-actions">
+          <a href="/groups/add" class="btn btn-primary">
+            <i class="ti ti-plus"></i> Create Group
+          </a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Servers</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Groups}}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="ti ti-folders me-2 text-primary"></i>
+                  <strong>{{.Name}}</strong>
+                </div>
+              </td>
+              <td>{{.Description}}</td>
+              <td>
+                <span class="badge bg-blue-lt">{{.ServerCount}} server{{if ne .ServerCount 1}}s{{end}}</span>
+              </td>
+              <td>
+                <div class="btn-list flex-nowrap">
+                  <a href="/groups/{{.ID}}/edit" class="btn btn-sm btn-icon btn-outline-primary" title="Edit / Manage Servers">
+                    <i class="ti ti-edit"></i>
+                  </a>
+                  <form method="POST" action="/groups/{{.ID}}/delete" class="d-inline" onsubmit="return confirm('Delete this group? The hosts themselves will not be deleted.')">
+                    <button type="submit" class="btn btn-sm btn-icon btn-outline-danger" title="Delete Group">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="4" class="text-center text-secondary py-4">
+                <i class="ti ti-folders-off" style="font-size: 2rem;"></i>
+                <p class="mt-2">No groups yet. Create one to organize your hosts.</p>
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <title>MFA Setup Required - {{appName}}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="preload" href="/static/css/fonts/tabler-icons.woff2" as="font" type="font/woff2" crossorigin>
+    <script>
+      (function() {
+        var resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-bs-theme', resolved);
+        document.documentElement.style.colorScheme = resolved;
+      })();
+    </script>
+    <style>
+      html[data-bs-theme="dark"],
+      html[data-bs-theme="dark"] body { background-color: #1a2234; color-scheme: dark; }
+      html[data-bs-theme="light"],
+      html[data-bs-theme="light"] body { background-color: #f1f5f9; color-scheme: light; }
+      [data-bs-theme="dark"] ::selection { background: #3d6098; color: #f0f4f8; }
+      [data-bs-theme="dark"] ::-moz-selection { background: #3d6098; color: #f0f4f8; }
+      [data-bs-theme="light"] ::selection { background: #b3d4fc; color: #1a1a1a; }
+      [data-bs-theme="light"] ::-moz-selection { background: #b3d4fc; color: #1a1a1a; }
+    </style>
+    <link rel="stylesheet" href="/static/css/tabler.min.css">
+    <link rel="stylesheet" href="/static/css/tabler-icons.min.css">
+  </head>
+  <body class="d-flex flex-column">
+    <div class="page page-center">
+      <div class="container container-tight py-4">
+        <div class="text-center mb-4">
+          <h1><i class="ti ti-key"></i> {{appName}}</h1>
+          <p class="text-secondary">Centralized SSH Key Management and Deployment</p>
+        </div>
+        <div class="card card-md">
+          <div class="card-body">
+            <h2 class="h2 text-center mb-4">
+              <i class="ti ti-shield-check"></i> MFA Setup Required
+            </h2>
+
+            <div class="alert alert-warning">
+              <div class="d-flex">
+                <div><i class="ti ti-alert-triangle icon alert-icon"></i></div>
+                <div>
+                  <h4 class="alert-title">Two-Factor Authentication is required</h4>
+                  <div class="text-secondary">Your administrator requires all users to set up two-factor authentication. Please configure MFA to continue.</div>
+                </div>
+              </div>
+            </div>
+
+            {{if .Flash}}
+            <div class="alert alert-{{.Flash.Type}}">
+              <i class="ti ti-alert-circle"></i> {{.Flash.Message}}
+            </div>
+            {{end}}
+
+            <div class="mb-4">
+              <h4>Step 1: Scan QR Code</h4>
+              <p class="text-secondary">
+                Scan the QR code below with your authenticator app (Google Authenticator, Authy, etc.)
+              </p>
+              <div class="text-center my-4">
+                <div id="qrcode" class="d-inline-block p-3 bg-white border rounded"></div>
+              </div>
+              <div class="text-center">
+                <p class="text-secondary mb-1">Or enter this secret manually:</p>
+                <code class="fs-4 user-select-all">{{.MFASecret}}</code>
+              </div>
+            </div>
+
+            <hr>
+
+            <div>
+              <h4>Step 2: Verify Code</h4>
+              <p class="text-secondary">
+                Enter the 6-digit code from your authenticator app to confirm setup.
+              </p>
+              <form action="/mfa/setup" method="post" autocomplete="off">
+                <input type="hidden" name="mfa_secret" value="{{.MFASecret}}">
+                <div class="mb-3">
+                  <label class="form-label required">Verification Code</label>
+                  <div class="input-icon">
+                    <span class="input-icon-addon"><i class="ti ti-shield-lock"></i></span>
+                    <input type="text" name="mfa_code" class="form-control" placeholder="000000" 
+                           required pattern="[0-9]{6}" maxlength="6" autocomplete="off" autofocus
+                           style="font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center;">
+                  </div>
+                </div>
+                <div class="form-footer">
+                  <button type="submit" class="btn btn-primary w-100">
+                    <i class="ti ti-shield-check"></i> Enable MFA
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div class="text-center mt-3">
+              <a href="/logout" class="text-secondary"><i class="ti ti-logout"></i> Logout</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+      new QRCode(document.getElementById("qrcode"), {
+        text: "{{.MFAUri}}",
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      // --- CSRF Protection ---
+      (function() {
+        var m = document.cookie.match(/(?:^|;\s*)_csrf=([^;]*)/);
+        var token = m ? decodeURIComponent(m[1]) : '';
+        document.querySelectorAll('form').forEach(function(form) {
+          if ((form.method || 'get').toLowerCase() === 'post' && !form.querySelector('input[name="_csrf"]')) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = '_csrf';
+            input.value = token;
+            form.prepend(input);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,215 @@
+{{define "content"}}
+<div class="row row-deck row-cards">
+  <!-- Theme Settings -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-palette"></i> Appearance</h3>
+      </div>
+      <div class="card-body">
+        <form action="/settings/theme" method="post">
+          <div class="row align-items-end">
+            <div class="col-auto">
+              <label class="form-label">Theme</label>
+              <select name="theme" class="form-select" style="width: 250px;">
+                <option value="auto" {{if or (not .User) (eq .User.Theme "") (eq .User.Theme "auto")}}selected{{end}}>Automatic (System)</option>
+                <option value="light" {{if and .User (eq .User.Theme "light")}}selected{{end}}>Light</option>
+                <option value="dark" {{if and .User (eq .User.Theme "dark")}}selected{{end}}>Dark</option>
+              </select>
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary">
+                <i class="ti ti-device-floppy"></i> Save
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Picture -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-camera"></i> Profile Picture</h3>
+      </div>
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto">
+            <span class="avatar avatar-xl rounded-circle bg-primary-lt" id="avatar-preview-container">
+              {{with .User}}
+              {{if .AvatarBase64}}
+              <img src="/avatar/{{.ID}}" id="avatar-preview" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="Avatar">
+              {{else}}
+              <i class="ti ti-user" style="font-size: 2.5rem;" id="avatar-placeholder"></i>
+              {{end}}
+              {{end}}
+            </span>
+          </div>
+          <div class="col">
+            <form action="/settings/avatar" method="post" enctype="multipart/form-data">
+              <div class="mb-2">
+                <input type="file" name="avatar" class="form-control" accept="image/png,image/jpeg,image/gif,image/webp" onchange="previewAvatar(this)">
+                <small class="form-hint">Max. 2 MB. PNG, JPG, GIF or WebP.</small>
+              </div>
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">
+                  <i class="ti ti-upload"></i> Upload
+                </button>
+              </div>
+            </form>
+            {{with .User}}
+            {{if .AvatarBase64}}
+            <form action="/settings/avatar" method="post" class="mt-2">
+              <input type="hidden" name="remove_avatar" value="1">
+              <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="ti ti-trash"></i> Remove Picture
+              </button>
+            </form>
+            {{end}}
+            {{end}}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personal Settings -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-lock"></i> Change Password</h3>
+      </div>
+      <div class="card-body">
+        <form action="/settings" method="post">
+          <div class="mb-3">
+            <label class="form-label required">Current Password</label>
+            <input type="password" name="current_password" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">New Password</label>
+            <input type="password" name="new_password" class="form-control" required minlength="{{if .PasswordPolicy}}{{.PasswordPolicy.MinLength}}{{else}}8{{end}}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Confirm New Password</label>
+            <input type="password" name="confirm_password" class="form-control" required minlength="{{if .PasswordPolicy}}{{.PasswordPolicy.MinLength}}{{else}}8{{end}}">
+          </div>
+          {{if .PasswordPolicy}}
+          <div class="mb-3">
+            <small class="form-hint">
+              Password requirements: min. {{.PasswordPolicy.MinLength}} characters{{if .PasswordPolicy.RequireUpper}}, uppercase{{end}}{{if .PasswordPolicy.RequireLower}}, lowercase{{end}}{{if .PasswordPolicy.RequireDigit}}, digit{{end}}{{if .PasswordPolicy.RequireSpecial}}, special char{{end}}.
+            </small>
+          </div>
+          {{end}}
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-lock"></i> Change Password
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MFA Settings -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-shield-check"></i> Two-Factor Authentication (MFA)</h3>
+      </div>
+      <div class="card-body">
+        {{with .User}}
+        {{if .MFAEnabled}}
+        <div class="alert alert-success">
+          <div class="d-flex">
+            <div><i class="ti ti-shield-check icon alert-icon"></i></div>
+            <div>
+              <h4 class="alert-title">MFA is enabled</h4>
+              <div class="text-secondary">Your account is protected with two-factor authentication.</div>
+            </div>
+          </div>
+        </div>
+        {{if not $.MFARequired}}
+        <form action="/settings/mfa/disable" method="post" onsubmit="return confirm('Are you sure you want to disable MFA? This will reduce your account security.')">
+          <button type="submit" class="btn btn-outline-danger">
+            <i class="ti ti-shield-off"></i> Disable MFA
+          </button>
+        </form>
+        {{else}}
+        <div class="text-secondary">
+          <i class="ti ti-info-circle"></i> MFA is enforced by your administrator and cannot be disabled.
+        </div>
+        {{end}}
+        {{else}}
+        <div class="alert alert-warning">
+          <div class="d-flex">
+            <div><i class="ti ti-alert-triangle icon alert-icon"></i></div>
+            <div>
+              <h4 class="alert-title">MFA is not enabled</h4>
+              <div class="text-secondary">Add an extra layer of security to your account.{{if $.MFARequired}} <strong>MFA is required by your administrator.</strong>{{end}}</div>
+            </div>
+          </div>
+        </div>
+        <a href="/settings/mfa/setup" class="btn btn-primary">
+          <i class="ti ti-shield-check"></i> Enable MFA
+        </a>
+        {{end}}
+        {{end}}
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Notifications -->
+  {{if .EmailEnabled}}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-mail"></i> Email Notifications</h3>
+      </div>
+      <div class="card-body">
+        {{with .User}}
+        <p class="text-secondary mb-3">
+          Receive email notifications for certain events. Notifications are sent to <strong>{{.Email}}</strong>.
+        </p>
+        <form action="/settings/email/notify" method="post">
+          <div class="mb-3">
+            <label class="form-check form-switch">
+              <input type="hidden" name="email_notify_login" value="0">
+              <input class="form-check-input" type="checkbox" name="email_notify_login" value="1" {{if .EmailNotifyLogin}}checked{{end}} onchange="this.form.submit()">
+              <span class="form-check-label">Login notification</span>
+              <span class="form-check-description">Send an email every time someone logs into your account.</span>
+            </label>
+          </div>
+        </form>
+        {{end}}
+      </div>
+    </div>
+  </div>
+  {{end}}
+
+</div>
+<script>
+function previewAvatar(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var container = document.getElementById('avatar-preview-container');
+    var existing = document.getElementById('avatar-preview');
+    var placeholder = document.getElementById('avatar-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
+    if (existing) {
+      existing.src = e.target.result;
+    } else {
+      var img = document.createElement('img');
+      img.id = 'avatar-preview';
+      img.src = e.target.result;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+      img.alt = 'Avatar';
+      container.appendChild(img);
+    }
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+</script>
+{{end}}

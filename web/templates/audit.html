@@ -1,0 +1,167 @@
+{{define "content"}}
+<div class="row row-deck row-cards">
+  <!-- Filter / Info -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-list-details"></i> Audit Log</h3>
+        <div class="card-actions">
+          {{if .AuditIsAdmin}}
+          <div class="btn-group">
+            <a href="/audit" class="btn btn-sm {{if not .AuditFilterUser}}btn-primary{{else}}btn-outline-primary{{end}}">
+              <i class="ti ti-users"></i> All Users
+            </a>
+            <a href="/audit?filter=mine" class="btn btn-sm {{if .AuditFilterUser}}btn-primary{{else}}btn-outline-primary{{end}}">
+              <i class="ti ti-user"></i> My Actions
+            </a>
+          </div>
+          {{end}}
+          <span class="badge bg-blue-lt ms-2">{{.AuditTotal}} entries</span>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table table-striped">
+          <thead>
+            <tr>
+              <th style="width: 170px;">Timestamp</th>
+              <th style="width: 130px;">User</th>
+              <th style="width: 180px;">Action</th>
+              <th>Details</th>
+              <th style="width: 130px;">IP Address</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .AuditEntries}}
+            <tr>
+              <td class="text-secondary">
+                <i class="ti ti-clock"></i> {{.CreatedAt.Format "2006-01-02 15:04:05"}}
+              </td>
+              <td>
+                <span class="badge bg-cyan-lt"><i class="ti ti-user"></i> {{.Username}}</span>
+              </td>
+              <td>
+                {{if eq .Action "login_success"}}
+                  <span class="badge bg-green-lt"><i class="ti ti-login"></i> Login</span>
+                {{else if eq .Action "login_failed"}}
+                  <span class="badge bg-red-lt"><i class="ti ti-login"></i> Login Failed</span>
+                {{else if eq .Action "logout"}}
+                  <span class="badge bg-secondary-lt"><i class="ti ti-logout"></i> Logout</span>
+                {{else if eq .Action "mfa_verified"}}
+                  <span class="badge bg-green-lt"><i class="ti ti-shield-check"></i> MFA Verified</span>
+                {{else if eq .Action "mfa_failed"}}
+                  <span class="badge bg-red-lt"><i class="ti ti-shield-off"></i> MFA Failed</span>
+                {{else if eq .Action "mfa_enabled"}}
+                  <span class="badge bg-green-lt"><i class="ti ti-shield-check"></i> MFA Enabled</span>
+                {{else if eq .Action "mfa_disabled"}}
+                  <span class="badge bg-yellow-lt"><i class="ti ti-shield-off"></i> MFA Disabled</span>
+                {{else if eq .Action "key_generated"}}
+                  <span class="badge bg-blue-lt"><i class="ti ti-key"></i> Key Generated</span>
+                {{else if eq .Action "key_imported"}}
+                  <span class="badge bg-blue-lt"><i class="ti ti-download"></i> Key Imported</span>
+                {{else if eq .Action "key_deleted"}}
+                  <span class="badge bg-orange-lt"><i class="ti ti-trash"></i> Key Deleted</span>
+                {{else if eq .Action "key_downloaded"}}
+                  <span class="badge bg-cyan-lt"><i class="ti ti-file-download"></i> Key Downloaded</span>
+                {{else if eq .Action "server_added"}}
+                  <span class="badge bg-blue-lt"><i class="ti ti-server"></i> Server Added</span>
+                {{else if eq .Action "server_deleted"}}
+                  <span class="badge bg-orange-lt"><i class="ti ti-trash"></i> Server Deleted</span>
+                {{else if eq .Action "server_test"}}
+                  <span class="badge bg-cyan-lt"><i class="ti ti-plug"></i> Server Test</span>
+                {{else if eq .Action "server_auth_test"}}
+                  <span class="badge bg-cyan-lt"><i class="ti ti-lock-check"></i> Auth Test</span>
+                {{else if eq .Action "deploy_success"}}
+                  <span class="badge bg-green-lt"><i class="ti ti-send"></i> Deploy OK</span>
+                {{else if eq .Action "deploy_failed"}}
+                  <span class="badge bg-red-lt"><i class="ti ti-send-off"></i> Deploy Failed</span>
+                {{else if eq .Action "user_created"}}
+                  <span class="badge bg-purple-lt"><i class="ti ti-user-plus"></i> User Created</span>
+                {{else if eq .Action "user_updated"}}
+                  <span class="badge bg-purple-lt"><i class="ti ti-user-edit"></i> User Updated</span>
+                {{else if eq .Action "user_deleted"}}
+                  <span class="badge bg-red-lt"><i class="ti ti-user-minus"></i> User Deleted</span>
+                {{else if eq .Action "settings_changed"}}
+                  <span class="badge bg-yellow-lt"><i class="ti ti-settings"></i> Settings Changed</span>
+                {{else if eq .Action "password_changed"}}
+                  <span class="badge bg-yellow-lt"><i class="ti ti-lock"></i> Password Changed</span>
+                {{else if eq .Action "masterkey_regenerated"}}
+                  <span class="badge bg-yellow-lt"><i class="ti ti-refresh"></i> Master Key Regen</span>
+                {{else if eq .Action "masterkey_regen_failed"}}
+                  <span class="badge bg-red-lt"><i class="ti ti-key-off"></i> Master Key Regen Failed</span>
+                {{else if eq .Action "avatar_changed"}}
+                  <span class="badge bg-cyan-lt"><i class="ti ti-photo"></i> Avatar Changed</span>
+                {{else if eq .Action "email_notify_changed"}}
+                  <span class="badge bg-yellow-lt"><i class="ti ti-mail-cog"></i> Email Notify Changed</span>
+                {{else if eq .Action "email_test_sent"}}
+                  <span class="badge bg-green-lt"><i class="ti ti-mail-check"></i> Email Test Sent</span>
+                {{else if eq .Action "email_test_failed"}}
+                  <span class="badge bg-red-lt"><i class="ti ti-mail-off"></i> Email Test Failed</span>
+                {{else if eq .Action "email_login_sent"}}
+                  <span class="badge bg-green-lt"><i class="ti ti-mail-forward"></i> Login Email Sent</span>
+                {{else if eq .Action "email_login_failed"}}
+                  <span class="badge bg-red-lt"><i class="ti ti-mail-off"></i> Login Email Failed</span>
+                {{else if eq .Action "group_created"}}
+                  <span class="badge bg-blue-lt"><i class="ti ti-folder-plus"></i> Group Created</span>
+                {{else if eq .Action "group_updated"}}
+                  <span class="badge bg-blue-lt"><i class="ti ti-folder-cog"></i> Group Updated</span>
+                {{else if eq .Action "group_deleted"}}
+                  <span class="badge bg-orange-lt"><i class="ti ti-folder-minus"></i> Group Deleted</span>
+                {{else if eq .Action "group_deploy"}}
+                  <span class="badge bg-green-lt"><i class="ti ti-send"></i> Group Deploy</span>
+                {{else if eq .Action "server_updated"}}
+                  <span class="badge bg-blue-lt"><i class="ti ti-server-cog"></i> Server Updated</span>
+                {{else if eq .Action "cron_job_created"}}
+                  <span class="badge bg-blue-lt"><i class="ti ti-clock-plus"></i> Cron Created</span>
+                {{else if eq .Action "cron_job_updated"}}
+                  <span class="badge bg-blue-lt"><i class="ti ti-clock-cog"></i> Cron Updated</span>
+                {{else if eq .Action "cron_job_deleted"}}
+                  <span class="badge bg-orange-lt"><i class="ti ti-clock-minus"></i> Cron Deleted</span>
+                {{else if eq .Action "cron_job_paused"}}
+                  <span class="badge bg-yellow-lt"><i class="ti ti-clock-pause"></i> Cron Paused</span>
+                {{else if eq .Action "cron_job_resumed"}}
+                  <span class="badge bg-green-lt"><i class="ti ti-clock-play"></i> Cron Resumed</span>
+                {{else if eq .Action "cron_job_executed"}}
+                  <span class="badge bg-green-lt"><i class="ti ti-clock-check"></i> Cron Executed</span>
+                {{else if eq .Action "cron_job_failed"}}
+                  <span class="badge bg-red-lt"><i class="ti ti-clock-off"></i> Cron Failed</span>
+                {{else}}
+                  <span class="badge bg-secondary-lt">{{.Action}}</span>
+                {{end}}
+              </td>
+              <td class="text-secondary text-break" style="max-width: 400px;">{{.Details}}</td>
+              <td class="text-secondary"><code>{{.IPAddress}}</code></td>
+            </tr>
+            {{else}}
+            <tr>
+              <td colspan="5" class="text-center text-secondary py-4">
+                <i class="ti ti-mood-empty" style="font-size: 2rem;"></i><br>
+                No audit entries found.
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+      {{if gt .AuditTotalPages 1}}
+      <div class="card-footer d-flex align-items-center">
+        <p class="m-0 text-secondary">
+          Page <strong>{{.AuditPage}}</strong> of <strong>{{.AuditTotalPages}}</strong>
+        </p>
+        <ul class="pagination m-0 ms-auto">
+          <li class="page-item {{if le .AuditPage 1}}disabled{{end}}">
+            <a class="page-link" href="/audit?page={{.AuditPrevPage}}{{if .AuditFilterUser}}&filter=mine{{end}}">
+              <i class="ti ti-chevron-left"></i> Prev
+            </a>
+          </li>
+          <li class="page-item {{if ge .AuditPage .AuditTotalPages}}disabled{{end}}">
+            <a class="page-link" href="/audit?page={{.AuditNextPage}}{{if .AuditFilterUser}}&filter=mine{{end}}">
+              Next <i class="ti ti-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</div>
+{{end}}
