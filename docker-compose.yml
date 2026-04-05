@@ -1,6 +1,7 @@
 services:
   keywarden:
     image: git.techniverse.net/scriptos/keywarden:latest
+    build: .
     container_name: keywarden
     restart: unless-stopped
     ports:
