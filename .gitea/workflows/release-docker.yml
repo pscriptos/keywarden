@@ -28,6 +28,11 @@ jobs:
           # Strip 'v' prefix for docker tag if needed
           VERSION="${TAG#v}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          # Strip protocol (https://) from REGISTRY_URL for Docker tags
+          REGISTRY="${{ vars.REGISTRY_URL }}"
+          REGISTRY="${REGISTRY#https://}"
+          REGISTRY="${REGISTRY#http://}"
+          echo "registry=${REGISTRY}" >> "$GITHUB_OUTPUT"
 
       - name: Login to Gitea Container Registry
         uses: docker/login-action@v3
@@ -45,8 +50,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ vars.REGISTRY_URL }}/${{ secrets.REGISTRY_USER }}/${{ env.IMAGE_NAME }}:latest
-            ${{ vars.REGISTRY_URL }}/${{ secrets.REGISTRY_USER }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
+            ${{ steps.version.outputs.registry }}/${{ secrets.REGISTRY_USER }}/${{ env.IMAGE_NAME }}:latest
+            ${{ steps.version.outputs.registry }}/${{ secrets.REGISTRY_USER }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
           labels: |
             org.opencontainers.image.title=Keywarden
             org.opencontainers.image.description=Centralized SSH Key Management and Deployment

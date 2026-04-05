@@ -21,6 +21,9 @@ vendor/
 *.swo
 *~
 
+# AI workspace
+.ki-workspace/
+
 # OS
 .DS_Store
 Thumbs.db
