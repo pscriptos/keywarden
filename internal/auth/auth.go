@@ -156,12 +156,23 @@ func (s *Service) HasUsers() (bool, error) {
 
 // EnsureAdmin creates a default owner user if no users exist.
 // It auto-generates a secure password and returns (created, generatedPassword, error).
+// A persistent flag ("initial_setup_complete") is stored in the settings table
+// so that an admin account is never re-created after the initial setup, even
+// if the users table is unexpectedly empty (e.g. due to a misconfigured volume).
 func (s *Service) EnsureAdmin(username, email string) (bool, string, error) {
+	// Defence-in-depth: if the initial setup was already completed once,
+	// never auto-create another admin – even when the users table is empty.
+	if s.isInitialSetupComplete() {
+		return false, "", nil
+	}
+
 	hasUsers, err := s.HasUsers()
 	if err != nil {
 		return false, "", err
 	}
 	if hasUsers {
+		// Users exist but no flag yet (upgrade path) – set the flag now.
+		s.markInitialSetupComplete()
 		return false, "", nil
 	}
 
@@ -183,7 +194,26 @@ func (s *Service) EnsureAdmin(username, email string) (bool, string, error) {
 	if err != nil {
 		return false, "", err
 	}
+
+	// Mark initial setup as complete so the password is never regenerated.
+	s.markInitialSetupComplete()
+
 	return true, password, nil
+}
+
+// isInitialSetupComplete checks whether the initial admin setup has already
+// been performed by looking for a flag in the settings table.
+func (s *Service) isInitialSetupComplete() bool {
+	var val string
+	err := s.db.QueryRow(`SELECT value FROM settings WHERE key = 'initial_setup_complete'`).Scan(&val)
+	return err == nil && val == "true"
+}
+
+// markInitialSetupComplete persists the initial-setup flag in the settings table.
+func (s *Service) markInitialSetupComplete() {
+	s.db.Exec(
+		`INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('initial_setup_complete', 'true', CURRENT_TIMESTAMP)`,
+	)
 }
 
 // generateSecurePassword creates a cryptographically secure random password

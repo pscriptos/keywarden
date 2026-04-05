@@ -7,6 +7,8 @@ package main
 import (
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"git.techniverse.net/scriptos/keywarden/internal/audit"
 	"git.techniverse.net/scriptos/keywarden/internal/auth"
@@ -33,6 +35,10 @@ func main() {
 
 	logging.Info("🔑 Keywarden - Centralized SSH Key Management and Deployment")
 	logging.Info("   https://git.techniverse.net/scriptos/keywarden")
+
+	// Validate data paths – relative paths inside a container bypass the
+	// persistent volume mount and lead to silent data loss on restart.
+	validateDataPaths(cfg)
 
 	// Ensure data directories exist
 	for _, dir := range []string{cfg.DataDir, cfg.KeysDir, cfg.MasterDir} {
@@ -151,4 +157,34 @@ func getEnvWithLegacy(primary, legacy, fallback string) string {
 		return val
 	}
 	return fallback
+}
+
+// validateDataPaths checks for a common misconfiguration: relative paths
+// (e.g. ./data/...) that resolve to the container's working directory instead
+// of the persistent volume mount. This would cause silent data loss on every
+// container restart.
+func validateDataPaths(cfg *config.Config) {
+	paths := map[string]string{
+		"KEYWARDEN_DB_PATH":    cfg.DBPath,
+		"KEYWARDEN_DATA_DIR":   cfg.DataDir,
+		"KEYWARDEN_KEYS_DIR":   cfg.KeysDir,
+		"KEYWARDEN_MASTER_DIR": cfg.MasterDir,
+	}
+
+	for envVar, p := range paths {
+		if p == "" {
+			continue
+		}
+		abs, err := filepath.Abs(p)
+		if err != nil {
+			continue
+		}
+		// Detect relative paths that resolve outside /data (the expected volume).
+		if !filepath.IsAbs(p) || (!strings.HasPrefix(abs, "/data") && !strings.HasPrefix(abs, `\data`)) {
+			// Only warn – don't block startup for non-Docker environments.
+			if strings.HasPrefix(p, "./") || strings.HasPrefix(p, "../") || (!filepath.IsAbs(p) && p != "") {
+				logging.Warn("⚠ %s is a relative path (%s → %s). Inside a Docker container this may bypass the persistent volume and cause DATA LOSS on restart. Use an absolute path like /data/... instead.", envVar, p, abs)
+			}
+		}
+	}
 }
