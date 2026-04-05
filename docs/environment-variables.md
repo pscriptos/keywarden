@@ -25,14 +25,16 @@ Complete reference of all configuration options for Keywarden. All settings are 
 | `KEYWARDEN_RATE_LIMIT_LOGIN` | `10` | Maximum login POST attempts per IP per minute. Set to `0` to disable. |
 | `KEYWARDEN_MAX_REQUEST_SIZE` | `10485760` | Maximum request body size in bytes (default: 10 MB). Set to `0` for no limit. |
 
-## Initial Admin Account
+## Initial Owner Account
 
 These variables are only used on first startup when no users exist in the database:
 
 | Variable | Default | Description |
 |---|---|---|
-| `KEYWARDEN_ADMIN_USER` | `admin` | Username for the initial owner account |
-| `KEYWARDEN_ADMIN_EMAIL` | `admin@keywarden.local` | Email for the initial owner account |
+| `KEYWARDEN_OWNER_USER` | `admin` | Username for the initial owner account |
+| `KEYWARDEN_OWNER_EMAIL` | `admin@keywarden.local` | Email for the initial owner account |
+
+> **Note:** The previous variable names `KEYWARDEN_ADMIN_USER` and `KEYWARDEN_ADMIN_EMAIL` are still accepted for backward compatibility but are deprecated. Please update your `.env` file to use the new names.
 
 The initial password is auto-generated (20 characters, alphanumeric) and printed to the startup log. It must be changed on first login.
 
@@ -74,9 +76,9 @@ KEYWARDEN_ENCRYPTION_KEY=mX9nP2qR4sT6uV8wY0zA1bC3dE5fG7hI
 KEYWARDEN_PORT=8080
 KEYWARDEN_LOG_LEVEL=INFO
 
-# Initial admin (only used on first startup)
-KEYWARDEN_ADMIN_USER=admin
-KEYWARDEN_ADMIN_EMAIL=admin@example.com
+# Initial owner (only used on first startup)
+KEYWARDEN_OWNER_USER=admin
+KEYWARDEN_OWNER_EMAIL=admin@example.com
 
 # Reverse proxy / HTTPS
 KEYWARDEN_BASE_URL=https://keywarden.example.com

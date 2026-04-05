@@ -46,7 +46,7 @@ func (s *Service) DeployKey(key *models.SSHKey, server *models.Server, authPriva
 		Timeout:         10 * time.Second,
 	}
 
-	addr := fmt.Sprintf("%s:%d", server.Hostname, server.Port)
+	addr := net.JoinHostPort(server.Hostname, fmt.Sprintf("%d", server.Port))
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		s.logDeployment(key.ID, server.ID, "failed", fmt.Sprintf("connection failed: %v", err))
@@ -92,7 +92,7 @@ func (s *Service) DeployKeyWithPassword(key *models.SSHKey, server *models.Serve
 		Timeout:         10 * time.Second,
 	}
 
-	addr := fmt.Sprintf("%s:%d", server.Hostname, server.Port)
+	addr := net.JoinHostPort(server.Hostname, fmt.Sprintf("%d", server.Port))
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		s.logDeployment(key.ID, server.ID, "failed", fmt.Sprintf("connection failed: %v", err))
@@ -140,7 +140,7 @@ func (s *Service) RemoveKey(key *models.SSHKey, server *models.Server, authPriva
 		Timeout:         10 * time.Second,
 	}
 
-	addr := fmt.Sprintf("%s:%d", server.Hostname, server.Port)
+	addr := net.JoinHostPort(server.Hostname, fmt.Sprintf("%d", server.Port))
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		return fmt.Errorf("failed to connect to server for key removal: %w", err)
@@ -193,7 +193,7 @@ func (s *Service) DeployKeyToUser(key *models.SSHKey, server *models.Server, aut
 		Timeout:         10 * time.Second,
 	}
 
-	addr := fmt.Sprintf("%s:%d", server.Hostname, server.Port)
+	addr := net.JoinHostPort(server.Hostname, fmt.Sprintf("%d", server.Port))
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		s.logDeployment(key.ID, server.ID, "failed", fmt.Sprintf("connection failed: %v", err))
@@ -296,7 +296,7 @@ func (s *Service) DeployKeyToUserWithPassword(key *models.SSHKey, server *models
 		Timeout:         10 * time.Second,
 	}
 
-	addr := fmt.Sprintf("%s:%d", server.Hostname, server.Port)
+	addr := net.JoinHostPort(server.Hostname, fmt.Sprintf("%d", server.Port))
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		s.logDeployment(key.ID, server.ID, "failed", fmt.Sprintf("connection failed: %v", err))
@@ -401,7 +401,7 @@ func (s *Service) RemoveKeyFromUser(key *models.SSHKey, server *models.Server, a
 		Timeout:         10 * time.Second,
 	}
 
-	addr := fmt.Sprintf("%s:%d", server.Hostname, server.Port)
+	addr := net.JoinHostPort(server.Hostname, fmt.Sprintf("%d", server.Port))
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		return fmt.Errorf("failed to connect to server for key removal: %w", err)
@@ -456,7 +456,7 @@ func (s *Service) RemoveSystemUser(key *models.SSHKey, server *models.Server, au
 		Timeout:         10 * time.Second,
 	}
 
-	addr := fmt.Sprintf("%s:%d", server.Hostname, server.Port)
+	addr := net.JoinHostPort(server.Hostname, fmt.Sprintf("%d", server.Port))
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		return fmt.Errorf("failed to connect to server for user removal: %w", err)
@@ -526,7 +526,7 @@ func (s *Service) DisableSystemUser(key *models.SSHKey, server *models.Server, a
 		Timeout:         10 * time.Second,
 	}
 
-	addr := fmt.Sprintf("%s:%d", server.Hostname, server.Port)
+	addr := net.JoinHostPort(server.Hostname, fmt.Sprintf("%d", server.Port))
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		return fmt.Errorf("failed to connect to server for user disable: %w", err)
@@ -577,7 +577,7 @@ func (s *Service) DisableSystemUser(key *models.SSHKey, server *models.Server, a
 // TestConnection tests TCP connectivity to a server (port reachable)
 func (s *Service) TestConnection(hostname string, port int) error {
 	logging.Debug("Testing TCP connection to %s:%d", hostname, port)
-	addr := fmt.Sprintf("%s:%d", hostname, port)
+	addr := net.JoinHostPort(hostname, fmt.Sprintf("%d", port))
 	conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
 	if err != nil {
 		return fmt.Errorf("cannot reach %s: %w", addr, err)
@@ -604,7 +604,7 @@ func (s *Service) TestSSHAuth(hostname string, port int, username string, privat
 		Timeout:         10 * time.Second,
 	}
 
-	addr := fmt.Sprintf("%s:%d", hostname, port)
+	addr := net.JoinHostPort(hostname, fmt.Sprintf("%d", port))
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		return fmt.Errorf("SSH authentication failed: %w", err)

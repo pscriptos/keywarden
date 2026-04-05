@@ -44,6 +44,14 @@ Keywarden provides a clean web UI to generate, import, and securely store SSH ke
 
 ---
 
+## Community
+
+Have questions, ideas, or feedback? Join the Keywarden Matrix chat room:
+
+➡️ [#keywarden:techniverse.net](https://matrix.to/#/#keywarden:techniverse.net)
+
+---
+
 ## License
 
 Keywarden is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0-or-later)](../LICENSE).

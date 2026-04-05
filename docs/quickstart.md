@@ -17,14 +17,29 @@ mkdir keywarden && cd keywarden
 
 Create a `.env` file with at minimum these settings:
 
+Generate two separate, cryptographically secure random strings (minimum 32 characters each):
+
+```bash
+# Linux / macOS
+openssl rand -base64 48
+
+# Alternative without OpenSSL
+head -c 48 /dev/urandom | base64
+
+# Windows (PowerShell)
+[Convert]::ToBase64String((1..48 | ForEach-Object { Get-Random -Max 256 }) -as [byte[]])
+```
+
+Each command produces a 64-character Base64 string. Run it **twice** — once for each key — and paste the values below:
+
 ```env
 # REQUIRED: Change these for security!
-KEYWARDEN_SESSION_KEY=your-random-session-key-at-least-32-characters
-KEYWARDEN_ENCRYPTION_KEY=your-random-encryption-key-at-least-32-chars
+KEYWARDEN_SESSION_KEY=<first generated string>
+KEYWARDEN_ENCRYPTION_KEY=<second generated string>
 
-# Optional: Admin credentials (defaults: admin / auto-generated password)
-KEYWARDEN_ADMIN_USER=admin
-KEYWARDEN_ADMIN_EMAIL=admin@example.com
+# Optional: Owner credentials (defaults: admin / auto-generated password)
+KEYWARDEN_OWNER_USER=admin
+KEYWARDEN_OWNER_EMAIL=admin@example.com
 
 # Optional: Port (default: 8080)
 KEYWARDEN_PORT=8080
@@ -43,33 +58,28 @@ services:
     ports:
       - "${KEYWARDEN_PORT:-8080}:${KEYWARDEN_PORT:-8080}"
     volumes:
-      - keywarden_data:/data
+      - ./data:/data
     env_file:
       - .env
+    networks:
+      keywarden_net:
+        ipv4_address: 172.23.64.10
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${KEYWARDEN_PORT:-8080}/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
-volumes:
-  keywarden_data:
-    driver: local
-```
-
-Or, to build from source:
-
-```yaml
-services:
-  keywarden:
-    build: .
-    container_name: keywarden
-    restart: unless-stopped
-    ports:
-      - "${KEYWARDEN_PORT:-8080}:${KEYWARDEN_PORT:-8080}"
-    volumes:
-      - keywarden_data:/data
-    env_file:
-      - .env
-
-volumes:
-  keywarden_data:
-    driver: local
+networks:
+  keywarden_net:
+    name: keywarden.dockernetwork.local
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.64.0/24
+          gateway: 172.23.64.1
+          ip_range: 172.23.64.128/25
 ```
 
 ## 4. Start Keywarden

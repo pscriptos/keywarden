@@ -144,6 +144,14 @@ Test files are co-located with their packages (e.g., `auth_test.go`, `config_tes
 - Error messages should be lowercase
 - Log messages use the structured logging package (`logging.Info`, `logging.Debug`, etc.)
 
+## Community & Communication
+
+For questions, discussions, and coordination with other contributors, join the Matrix chat:
+
+➡️ [#keywarden:techniverse.net](https://matrix.to/#/#keywarden:techniverse.net)
+
+---
+
 ## License
 
 All contributions must be compatible with the [AGPL-3.0-or-later](../LICENSE) license.

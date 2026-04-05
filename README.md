@@ -10,7 +10,7 @@
 >
 > - **Do NOT expose this application directly to the public internet.** Use it only in trusted, private networks.
 > - The software may contain bugs, incomplete features, or security issues.
-> - **Your feedback is valuable!** If you discover bugs or have suggestions, please report them at [git.techniverse.net/scriptos/keywarden](https://git.techniverse.net/scriptos/keywarden). Every report helps improve the project.
+> - **Your feedback is valuable!** If you discover bugs or have suggestions, please open an [Issue on GitHub](https://github.com/pscriptos/keywarden/issues). Every report helps improve the project.
 
 ---
 
@@ -44,14 +44,19 @@ git clone https://git.techniverse.net/scriptos/keywarden.git
 cd keywarden
 ```
 
-Create a `.env` file:
+Create a `.env` file and generate two separate cryptographically secure keys:
 
-```env
-KEYWARDEN_SESSION_KEY=your-random-session-key-at-least-32-characters
-KEYWARDEN_ENCRYPTION_KEY=your-random-encryption-key-at-least-32-chars
+```bash
+# Generate keys (run twice, once per key):
+openssl rand -base64 48
 ```
 
-> **Important:** Change both keys to unique random strings. The encryption key protects all stored SSH private keys — if lost, they cannot be recovered.
+```env
+KEYWARDEN_SESSION_KEY=<first generated string>
+KEYWARDEN_ENCRYPTION_KEY=<second generated string>
+```
+
+> **Important:** Change both keys to unique random strings. The encryption key protects all stored SSH private keys — if lost, they cannot be recovered. See the [Quick Start Guide](docs/quickstart.md) for more options to generate secure keys.
 
 ### 2. Start
 
@@ -114,3 +119,26 @@ For detailed documentation, see the [docs/](docs/README.md) folder:
 Keywarden is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0-or-later)](LICENSE).
 
 © 2026 Patrick Asmus ([scriptos](https://git.techniverse.net/scriptos))
+
+---
+
+## Community
+
+Join the **Keywarden Matrix chat** to discuss the project, ask questions, or share feedback:
+
+[![Matrix](https://img.shields.io/badge/Matrix-%23keywarden%3Atechniverse.net-blue?logo=matrix)](https://matrix.to/#/#keywarden:techniverse.net)
+
+➡️ [#keywarden:techniverse.net](https://matrix.to/#/#keywarden:techniverse.net)
+
+---
+
+## Repository & Mirror
+
+| | URL |
+|---|---|
+| **Primary (Gitea)** | [git.techniverse.net/scriptos/keywarden](https://git.techniverse.net/scriptos/keywarden) |
+| **Mirror (GitHub)** | [github.com/pscriptos/keywarden](https://github.com/pscriptos/keywarden) |
+
+The **primary repository** is hosted on Gitea. The GitHub repository is a read-only mirror.
+
+**Bug reports & feature requests:** Please open an [Issue on GitHub](https://github.com/pscriptos/keywarden/issues) — registration on the Gitea instance is currently closed.

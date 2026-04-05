@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Install build dependencies
-        run: apk add --no-cache gcc musl-dev sqlite-dev git
+        run: apk add --no-cache gcc musl-dev sqlite-dev git nodejs
 
       - name: Checkout code
         uses: actions/checkout@v4

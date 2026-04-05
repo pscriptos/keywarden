@@ -60,17 +60,18 @@ func main() {
 	mailSvc := mail.NewService(cfg)
 
 	// Create default owner if no users exist (password is auto-generated)
-	adminUser := getEnv("KEYWARDEN_ADMIN_USER", "admin")
-	adminEmail := getEnv("KEYWARDEN_ADMIN_EMAIL", "admin@keywarden.local")
+	// Support legacy KEYWARDEN_ADMIN_USER / KEYWARDEN_ADMIN_EMAIL for existing installations
+	ownerUser := getEnvWithLegacy("KEYWARDEN_OWNER_USER", "KEYWARDEN_ADMIN_USER", "admin")
+	ownerEmail := getEnvWithLegacy("KEYWARDEN_OWNER_EMAIL", "KEYWARDEN_ADMIN_EMAIL", "admin@keywarden.local")
 
-	created, generatedPass, err := authSvc.EnsureAdmin(adminUser, adminEmail)
+	created, generatedPass, err := authSvc.EnsureAdmin(ownerUser, ownerEmail)
 	if err != nil {
-		logging.Fatal("Failed to create admin user: %v", err)
+		logging.Fatal("Failed to create owner user: %v", err)
 	}
 	if created {
 		logging.Info("════════════════════════════════════════════════════════════")
 		logging.Info("  Initial owner account created")
-		logging.Info("  Username: %s", adminUser)
+		logging.Info("  Username: %s", ownerUser)
 		logging.Info("  Password: %s", generatedPass)
 		logging.Info("  Please change this password after first login!")
 		logging.Info("════════════════════════════════════════════════════════════")
@@ -133,6 +134,20 @@ func main() {
 
 func getEnv(key, fallback string) string {
 	if val, ok := os.LookupEnv(key); ok {
+		return val
+	}
+	return fallback
+}
+
+// getEnvWithLegacy checks the primary key first, then falls back to the
+// legacy (deprecated) key, and finally to the default value. This ensures
+// existing installations that still use the old variable name keep working.
+func getEnvWithLegacy(primary, legacy, fallback string) string {
+	if val, ok := os.LookupEnv(primary); ok {
+		return val
+	}
+	if val, ok := os.LookupEnv(legacy); ok {
+		logging.Warn("Environment variable %s is deprecated, please rename to %s", legacy, primary)
 		return val
 	}
 	return fallback
