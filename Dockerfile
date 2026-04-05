@@ -16,17 +16,17 @@ RUN CGO_ENABLED=1 GOOS=linux go build -o keywarden -ldflags="-s -w" ./cmd/keywar
 # Stage 2: Runtime
 FROM alpine:3.21
 
-RUN apk add --no-cache ca-certificates sqlite-libs tzdata curl
+RUN apk add --no-cache ca-certificates sqlite-libs tzdata curl su-exec
 
 RUN addgroup -S keywarden && adduser -S keywarden -G keywarden
 
 WORKDIR /app
 COPY --from=builder /build/keywarden .
+COPY entrypoint.sh .
 
 RUN mkdir -p /data/keys /data/master /data/avatars && \
-    chown -R keywarden:keywarden /data /app
-
-USER keywarden
+    chown -R keywarden:keywarden /data /app && \
+    chmod +x /app/entrypoint.sh
 
 ENV KEYWARDEN_PORT=8080
 ENV KEYWARDEN_DB_PATH=/data/keywarden.db
@@ -42,4 +42,4 @@ VOLUME ["/data"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:${KEYWARDEN_PORT:-8080}/api/health || exit 1
 
-ENTRYPOINT ["./keywarden"]
+ENTRYPOINT ["/app/entrypoint.sh"]
