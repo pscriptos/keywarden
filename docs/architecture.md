@@ -39,6 +39,7 @@ internal/
   security/               ← CSRF, security headers, rate limiting, proxy detection
   servers/                ← Server and server group management, access assignments
   sshutil/                ← SSH key generation (RSA, Ed25519, Ed448)
+  worker/                 ← Background key enforcement worker (Bastillion-style)
 web/
   embed.go                ← Go embed directives for templates and static files
   static/                 ← CSS, JS, fonts (Tabler UI framework)
@@ -59,7 +60,8 @@ web/
 10. **Start session cleanup** goroutine (removes expired sessions every minute)
 11. **Apply middleware chain**: request logger → security headers → rate limiting → size limiting → CSRF
 12. **Start cron scheduler** (checks for pending jobs every 30 seconds)
-13. **Start HTTP server**
+13. **Start key enforcement worker** (if enabled in Admin Settings)
+14. **Start HTTP server**
 
 ## Database Design
 

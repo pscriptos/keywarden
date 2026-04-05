@@ -655,3 +655,110 @@ func (s *Service) GetDeployments(userID int64) ([]map[string]interface{}, error)
 	}
 	return deployments, nil
 }
+
+// ReadAuthorizedKeys reads the current authorized_keys for a system user on a remote server.
+// Returns the list of key lines (non-empty, non-comment lines).
+func (s *Service) ReadAuthorizedKeys(server *models.Server, authPrivateKey []byte, systemUser string) ([]string, error) {
+	signer, err := ssh.ParsePrivateKey(authPrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse authentication key: %w", err)
+	}
+
+	config := &ssh.ClientConfig{
+		User: server.Username,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
+	}
+
+	addr := net.JoinHostPort(server.Hostname, fmt.Sprintf("%d", server.Port))
+	client, err := ssh.Dial("tcp", addr, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer client.Close()
+
+	session, err := client.NewSession()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session: %w", err)
+	}
+	defer session.Close()
+
+	homeDir := fmt.Sprintf("/home/%s", systemUser)
+	if systemUser == "root" {
+		homeDir = "/root"
+	}
+
+	cmd := fmt.Sprintf(`cat %s/.ssh/authorized_keys 2>/dev/null || echo ""`, homeDir)
+	output, err := session.Output(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read authorized_keys: %w", err)
+	}
+
+	var keys []string
+	for _, line := range strings.Split(string(output), "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") {
+			keys = append(keys, line)
+		}
+	}
+	return keys, nil
+}
+
+// WriteAuthorizedKeys replaces the entire authorized_keys file for a system user on a remote server
+// with the provided set of keys. This is the enforcement function.
+func (s *Service) WriteAuthorizedKeys(server *models.Server, authPrivateKey []byte, systemUser string, authorizedKeys []string) error {
+	signer, err := ssh.ParsePrivateKey(authPrivateKey)
+	if err != nil {
+		return fmt.Errorf("failed to parse authentication key: %w", err)
+	}
+
+	config := &ssh.ClientConfig{
+		User: server.Username,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
+	}
+
+	addr := net.JoinHostPort(server.Hostname, fmt.Sprintf("%d", server.Port))
+	client, err := ssh.Dial("tcp", addr, config)
+	if err != nil {
+		return fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer client.Close()
+
+	session, err := client.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create session: %w", err)
+	}
+	defer session.Close()
+
+	homeDir := fmt.Sprintf("/home/%s", systemUser)
+	if systemUser == "root" {
+		homeDir = "/root"
+	}
+
+	// Build the authorized_keys content
+	content := strings.Join(authorizedKeys, "\n")
+	if !strings.HasSuffix(content, "\n") {
+		content += "\n"
+	}
+
+	// Use printf to write the content to avoid shell interpretation issues
+	// First write to a temp file, then atomically move it
+	escapedContent := strings.ReplaceAll(content, "'", "'\\''")
+	cmd := fmt.Sprintf(
+		`mkdir -p %s/.ssh && chmod 700 %s/.ssh && printf '%%s' '%s' > %s/.ssh/authorized_keys.tmp && mv %s/.ssh/authorized_keys.tmp %s/.ssh/authorized_keys && chmod 600 %s/.ssh/authorized_keys && chown '%s':'%s' %s/.ssh/authorized_keys`,
+		homeDir, homeDir, escapedContent, homeDir, homeDir, homeDir, homeDir, systemUser, systemUser, homeDir,
+	)
+
+	if err := session.Run(cmd); err != nil {
+		return fmt.Errorf("failed to write authorized_keys: %w", err)
+	}
+
+	return nil
+}

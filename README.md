@@ -25,6 +25,7 @@
 - **Temporary Access** — Schedule time-limited access with automatic expiry (key removal, user disable, or user deletion)
 - **Three-Tier Roles** — Owner, Admin, and User with distinct permissions
 - **User Invitations** — Invite users via secure email links
+- **Key Enforcement** — Bastillion-style enforced key management: automatically detect and remove unauthorized SSH keys from servers
 - **Two-Factor Authentication** — TOTP-based MFA, optionally enforced for all users
 - **Password Policies & Account Lockout** — Configurable complexity rules and brute-force protection
 - **Audit Log** — Every action tracked with user, IP, timestamp, and details

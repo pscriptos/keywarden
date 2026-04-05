@@ -234,6 +234,14 @@ Navigate to **Admin Settings** (owner only) to configure:
 - **Account Lockout** — Number of failed attempts before lockout and lockout duration
 - **MFA Enforcement** — Require all users to enable TOTP MFA
 
+### Key Enforcement
+
+- **Enforcement Mode** — Disabled (default), Monitor (log only), or Enforce (auto-remove unauthorized keys)
+- **Check Interval** — How often the worker scans servers (1–1440 minutes, default: 15)
+- **Run Now** — Trigger an immediate enforcement check
+
+See [Security — Key Enforcement](security.md#key-enforcement-bastillion-style) for details.
+
 ### Master Key
 
 - View the system master key's public key and fingerprint

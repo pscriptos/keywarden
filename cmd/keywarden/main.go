@@ -24,6 +24,7 @@ import (
 	"git.techniverse.net/scriptos/keywarden/internal/mail"
 	"git.techniverse.net/scriptos/keywarden/internal/security"
 	"git.techniverse.net/scriptos/keywarden/internal/servers"
+	"git.techniverse.net/scriptos/keywarden/internal/worker"
 	"git.techniverse.net/scriptos/keywarden/web"
 )
 
@@ -76,6 +77,7 @@ func main() {
 	deploySvc := deploy.NewService(db)
 	auditSvc := audit.NewService(db)
 	cronSvc := cron.NewService(db, deploySvc, keysSvc, serversSvc, auditSvc)
+	workerSvc := worker.NewService(db, deploySvc, keysSvc, serversSvc, auditSvc)
 	mailSvc := mail.NewService(cfg)
 
 	// Create default owner if no users exist (password is auto-generated)
@@ -116,7 +118,7 @@ func main() {
 	}
 
 	// Setup HTTP handlers
-	handler := handlers.New(authSvc, keysSvc, serversSvc, deploySvc, auditSvc, cronSvc, mailSvc, db, web.TemplateFS, web.StaticFS, cfg.DataDir, cfg.SecureCookies, cfg.BaseURL)
+	handler := handlers.New(authSvc, keysSvc, serversSvc, deploySvc, auditSvc, cronSvc, workerSvc, mailSvc, db, web.TemplateFS, web.StaticFS, cfg.DataDir, cfg.SecureCookies, cfg.BaseURL)
 
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
@@ -141,6 +143,10 @@ func main() {
 	// Start cron scheduler
 	cronSvc.Start()
 	defer cronSvc.Stop()
+
+	// Start key enforcement worker
+	workerSvc.Start()
+	defer workerSvc.Stop()
 
 	// Start server
 	addr := ":" + cfg.Port
