@@ -2,7 +2,9 @@
 
 **Keywarden** is a self-hosted web application for centralized SSH key management and deployment. It lets you generate, store, and deploy SSH keys to Linux servers from a single web interface — with full audit logging, role-based access control, and automated temporary access scheduling.
 
----
+
+![Keywarden Dashboard](assets/img/dashboard.png)
+
 
 ## ⚠️ Alpha Software — Important Notice
 
