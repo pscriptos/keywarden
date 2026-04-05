@@ -246,3 +246,29 @@ Send a test email to verify SMTP configuration.
 ### Backup & Restore
 
 See [Backup & Restore](backup-restore.md) for details.
+
+## CLI Commands
+
+Keywarden provides CLI commands for administrative tasks that can be run via `docker exec`.
+
+### Password Reset
+
+Reset a user's password when they are locked out or have forgotten it:
+
+```bash
+docker exec -it keywarden ./keywarden reset-password --username <name>
+```
+
+This generates a new random password, prints it to the terminal, and forces the user to change it on next login. The account lockout counter is also cleared.
+
+To additionally disable MFA (e.g. when the user lost their TOTP device):
+
+```bash
+docker exec -it keywarden ./keywarden reset-password --username <name> --reset-mfa
+```
+
+### Help
+
+```bash
+docker exec -it keywarden ./keywarden help
+```

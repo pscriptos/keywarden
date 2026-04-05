@@ -1,0 +1,4 @@
+# Ensure shell scripts always have Unix line endings (LF),
+# even when checked out on Windows.
+*.sh text eol=lf
+entrypoint.sh text eol=lf

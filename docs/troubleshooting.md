@@ -27,12 +27,13 @@ Common issues and solutions for Keywarden.
 
 **Solutions**:
 - Check the very first startup logs: `docker compose logs keywarden`
-- If you missed the password, delete the database and restart to trigger a fresh setup:
+- Reset the password via CLI command (no restart needed):
   ```bash
-  docker compose down
-  docker volume rm keywarden_keywarden_data
-  docker compose up -d
-  docker compose logs keywarden
+  docker exec -it keywarden ./keywarden reset-password --username admin
+  ```
+- If MFA is also lost, add `--reset-mfa`:
+  ```bash
+  docker exec -it keywarden ./keywarden reset-password --username admin --reset-mfa
   ```
 
 ## Login Issues
@@ -50,7 +51,10 @@ Common issues and solutions for Keywarden.
 **Solutions**:
 - Wait for the lockout period to expire (default: 15 minutes)
 - Ask an administrator to unlock the account from the user management page
-- If you're the only owner: wait for the lockout to expire, or delete and recreate the database
+- If you're the only owner: reset your password via CLI (this also clears lockout):
+  ```bash
+  docker exec -it keywarden ./keywarden reset-password --username admin
+  ```
 
 ### MFA Code Invalid
 
