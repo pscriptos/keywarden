@@ -43,33 +43,28 @@ services:
     ports:
       - "${KEYWARDEN_PORT:-8080}:${KEYWARDEN_PORT:-8080}"
     volumes:
-      - keywarden_data:/data
+      - ./data:/data
     env_file:
       - .env
+    networks:
+      keywarden_net:
+        ipv4_address: 172.23.64.10
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${KEYWARDEN_PORT:-8080}/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
-volumes:
-  keywarden_data:
-    driver: local
-```
-
-Or, to build from source:
-
-```yaml
-services:
-  keywarden:
-    build: .
-    container_name: keywarden
-    restart: unless-stopped
-    ports:
-      - "${KEYWARDEN_PORT:-8080}:${KEYWARDEN_PORT:-8080}"
-    volumes:
-      - keywarden_data:/data
-    env_file:
-      - .env
-
-volumes:
-  keywarden_data:
-    driver: local
+networks:
+  keywarden_net:
+    name: keywarden.dockernetwork.local
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.64.0/24
+          gateway: 172.23.64.1
+          ip_range: 172.23.64.128/25
 ```
 
 ## 4. Start Keywarden

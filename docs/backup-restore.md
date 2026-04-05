@@ -82,12 +82,11 @@ In addition to the application-level backup, you can also back up the Docker vol
 # Stop the container
 docker compose down
 
-# Backup the volume
-docker run --rm -v keywarden_keywarden_data:/data -v $(pwd):/backup \
-  alpine tar czf /backup/keywarden-volume-backup.tar.gz /data
+# Backup the data directory
+tar czf keywarden-volume-backup.tar.gz ./data
 
 # Start the container
 docker compose up -d
 ```
 
-This captures the raw SQLite database file and all data files. Note that this backup is **not encrypted** — protect it accordingly.
+Since data is stored in the `./data` bind mount on the host, you can back it up directly without needing a helper container. Note that this backup is **not encrypted** — protect it accordingly.

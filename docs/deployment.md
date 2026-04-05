@@ -34,15 +34,18 @@ A complete `docker-compose.yml`:
 ```yaml
 services:
   keywarden:
-    build: .
+    image: git.techniverse.net/scriptos/keywarden:latest
     container_name: keywarden
     restart: unless-stopped
     ports:
       - "${KEYWARDEN_PORT:-8080}:${KEYWARDEN_PORT:-8080}"
     volumes:
-      - keywarden_data:/data
+      - ./data:/data
     env_file:
       - .env
+    networks:
+      keywarden_net:
+        ipv4_address: 172.23.64.10
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${KEYWARDEN_PORT:-8080}/api/health"]
       interval: 30s
@@ -50,9 +53,15 @@ services:
       start_period: 10s
       retries: 3
 
-volumes:
-  keywarden_data:
-    driver: local
+networks:
+  keywarden_net:
+    name: keywarden.dockernetwork.local
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.64.0/24
+          gateway: 172.23.64.1
+          ip_range: 172.23.64.128/25
 ```
 
 ### Environment File (.env)
@@ -180,12 +189,9 @@ The Docker HEALTHCHECK is configured automatically in the Dockerfile.
 To update Keywarden:
 
 ```bash
-# Pull latest changes (if building from source)
-git pull
-
-# Rebuild and restart
+# Pull latest image and restart
+docker compose pull
 docker compose down
-docker compose build --no-cache
 docker compose up -d
 ```
 
