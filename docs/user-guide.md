@@ -57,11 +57,11 @@ The **Keys** page lists all your SSH keys with:
 
 Admins and owners see all keys in the system, grouped by owner.
 
-### Downloading Keys
+### Viewing and Downloading Keys
 
-From the key list, you can download:
-- **Public Key** — For deployment to servers
-- **Private Key** — Decrypted and downloaded (use with caution)
+From the key list, you can:
+- **View Public Key** — Opens a modal overlay showing the public key with a copy-to-clipboard button
+- **Download Private Key** — Decrypted and downloaded (use with caution)
 
 ### Deleting Keys
 
