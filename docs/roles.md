@@ -98,10 +98,13 @@ The **Owner** role has unrestricted access. In addition to all Admin permissions
 
 #### Owner Protections
 
+- **Initial owner is permanently protected**: The owner account created during installation cannot be deleted, and its role cannot be changed. This is enforced both server-side and in the UI.
 - The last owner account cannot be deleted
 - The owner can always access Admin Settings, even when MFA enforcement would otherwise redirect them (to prevent lockout)
 - On first startup, the initial account is always created with the `owner` role
 - If no owner exists (e.g., after a migration from an older version), the first admin is automatically promoted to owner
+
+> **Note:** Existing installations are automatically migrated — the oldest owner (by ID) is marked as the initial owner during the database migration.
 
 ## Audit Log Visibility
 

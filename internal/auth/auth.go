@@ -240,12 +240,17 @@ func (s *Service) EnsureAdmin(username, email string) (bool, string, error) {
 		return false, "", fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	_, err = s.db.Exec(
+	result, err := s.db.Exec(
 		`INSERT INTO users (username, email, password_hash, role, must_change_password) VALUES (?, ?, ?, ?, 1)`,
 		username, email, string(hash), "owner",
 	)
 	if err != nil {
 		return false, "", err
+	}
+
+	// Store the ID of the initial owner so it can never be deleted or downgraded.
+	if ownerID, idErr := result.LastInsertId(); idErr == nil {
+		s.markInitialOwner(ownerID)
 	}
 
 	// Mark initial setup as complete so the password is never regenerated.
@@ -260,6 +265,43 @@ func (s *Service) isInitialSetupComplete() bool {
 	var val string
 	err := s.db.QueryRow(`SELECT value FROM settings WHERE key = 'initial_setup_complete'`).Scan(&val)
 	return err == nil && val == "true"
+}
+
+// markInitialOwner stores the user ID of the initial owner in the settings table.
+func (s *Service) markInitialOwner(userID int64) {
+	s.db.Exec(
+		`INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('initial_owner_id', ?, CURRENT_TIMESTAMP)`,
+		fmt.Sprintf("%d", userID),
+	)
+}
+
+// IsInitialOwner returns true if the given user ID is the initial owner
+// created during installation. This owner cannot be deleted or downgraded.
+func (s *Service) IsInitialOwner(userID int64) bool {
+	var val string
+	err := s.db.QueryRow(`SELECT value FROM settings WHERE key = 'initial_owner_id'`).Scan(&val)
+	if err != nil {
+		return false
+	}
+	stored, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return false
+	}
+	return stored == userID
+}
+
+// GetInitialOwnerID returns the user ID of the initial owner, or 0 if not set.
+func (s *Service) GetInitialOwnerID() int64 {
+	var val string
+	err := s.db.QueryRow(`SELECT value FROM settings WHERE key = 'initial_owner_id'`).Scan(&val)
+	if err != nil {
+		return 0
+	}
+	id, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return id
 }
 
 // markInitialSetupComplete persists the initial-setup flag in the settings table.

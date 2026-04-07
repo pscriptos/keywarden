@@ -174,6 +174,10 @@ type PageData struct {
 
 	// Key Enforcement
 	EnforcementStatus map[string]string
+
+	// Initial Owner protection
+	IsInitialOwner bool
+	InitialOwnerID int64
 }
 
 // SystemInfo holds runtime system information for the settings page
@@ -651,6 +655,11 @@ func isAdmin(role string) bool {
 // isOwner returns true if the role is owner
 func isOwner(role string) bool {
 	return role == "owner"
+}
+
+// getInitialOwnerID returns the user ID of the initial owner (0 if not set)
+func (h *Handler) getInitialOwnerID() int64 {
+	return h.auth.GetInitialOwnerID()
 }
 
 func (h *Handler) getUserID(r *http.Request) int64 {
@@ -1826,10 +1835,11 @@ func (h *Handler) handleUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := &PageData{
-		Title:  "User Management",
-		Active: "users",
-		User:   user,
-		Users:  users,
+		Title:          "User Management",
+		Active:         "users",
+		User:           user,
+		Users:          users,
+		InitialOwnerID: h.getInitialOwnerID(),
 	}
 	h.templates["users"].ExecuteTemplate(w, "base", data)
 }
@@ -2002,6 +2012,7 @@ func (h *Handler) handleUserAction(w http.ResponseWriter, r *http.Request) {
 				User:           user,
 				EditUser:       targetUser,
 				PasswordPolicy: &policy,
+				IsInitialOwner: h.auth.IsInitialOwner(targetID),
 			}
 			h.templates["users_edit"].ExecuteTemplate(w, "base", data)
 			return
@@ -2013,6 +2024,22 @@ func (h *Handler) handleUserAction(w http.ResponseWriter, r *http.Request) {
 		role := r.FormValue("role")
 		newPassword := r.FormValue("password")
 		forceChange := r.FormValue("must_change_password") == "1"
+
+		// Initial Owner protection: role must remain "owner"
+		if h.auth.IsInitialOwner(targetID) && role != "owner" {
+			policy := h.auth.GetPasswordPolicy()
+			data := &PageData{
+				Title:          "Edit User",
+				Active:         "users",
+				User:           user,
+				EditUser:       targetUser,
+				PasswordPolicy: &policy,
+				IsInitialOwner: true,
+				Flash:          &Flash{Type: "danger", Message: "The initial owner role cannot be changed. This account was created during installation and is permanently protected."},
+			}
+			h.templates["users_edit"].ExecuteTemplate(w, "base", data)
+			return
+		}
 
 		// Enforce role restrictions:
 		// - Admin can only assign "user" role
@@ -2107,6 +2134,11 @@ func (h *Handler) handleUserAction(w http.ResponseWriter, r *http.Request) {
 
 	case "delete":
 		if r.Method == http.MethodPost {
+			// Initial Owner protection: cannot be deleted
+			if h.auth.IsInitialOwner(targetID) {
+				http.Redirect(w, r, "/users", http.StatusSeeOther)
+				return
+			}
 			// Owner protection: cannot self-delete
 			if targetID == userID {
 				http.Redirect(w, r, "/users", http.StatusSeeOther)
