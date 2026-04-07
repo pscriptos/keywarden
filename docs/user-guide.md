@@ -88,10 +88,22 @@ Navigate to **Settings** to manage your account:
 
 ### Theme
 
-Choose between:
-- **Auto** — Follows your system/browser preference
+KeyWarden offers five color themes, each available in three modes:
+
+| Theme | Description |
+|-------|-------------|
+| **Ocean** (default) | Cyan/teal accent |
+| **Forest** | Green accent |
+| **Sunset** | Amber/orange accent |
+| **Rose** | Pink accent |
+| **Nord** | Cool blue-gray accent |
+
+Each theme supports:
+- **System** — Follows your system/browser preference (light or dark)
 - **Light** — Always light mode
 - **Dark** — Always dark mode
+
+> Existing installations using the previous theme values (`auto`, `light`, `dark`) are automatically migrated to the Ocean theme.
 
 ### Password Change
 

@@ -401,10 +401,26 @@ func (s *Service) DisableMFA(userID int64) error {
 	return err
 }
 
-// UpdateTheme updates the user's theme preference (auto, light, dark)
+// UpdateTheme updates the user's theme preference
 func (s *Service) UpdateTheme(id int64, theme string) error {
-	if theme != "auto" && theme != "light" && theme != "dark" {
-		theme = "auto"
+	// Map legacy default values to ocean
+	switch theme {
+	case "auto", "":
+		theme = "ocean-auto"
+	case "light":
+		theme = "ocean-light"
+	case "dark":
+		theme = "ocean-dark"
+	}
+	validThemes := map[string]bool{
+		"ocean-auto": true, "ocean-light": true, "ocean-dark": true,
+		"forest-auto": true, "forest-light": true, "forest-dark": true,
+		"sunset-auto": true, "sunset-light": true, "sunset-dark": true,
+		"rose-auto": true, "rose-light": true, "rose-dark": true,
+		"nord-auto": true, "nord-light": true, "nord-dark": true,
+	}
+	if !validThemes[theme] {
+		theme = "ocean-auto"
 	}
 	_, err := s.db.Exec(
 		`UPDATE users SET theme = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
