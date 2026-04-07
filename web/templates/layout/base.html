@@ -582,6 +582,15 @@
           </div>
           <!-- Spacer -->
           <div class="flex-grow-1"></div>
+          <!-- Update Available Badge (Admin/Owner only) -->
+          {{with .User}}{{if and (updateAvailable) (or (eq .Role "admin") (eq .Role "owner"))}}
+          <div class="nav-item d-none d-md-flex me-2">
+            <a href="{{releaseURL}}" class="btn btn-header-modern btn-sm" target="_blank" rel="noopener noreferrer" title="Update verfügbar: {{latestVersion}} (aktuell: {{appVersion}})">
+              <i class="ti ti-download" style="color: #fbbf24;"></i>
+              <span style="color: #fbbf24;">Update {{latestVersion}}</span>
+            </a>
+          </div>
+          {{end}}{{end}}
           <!-- Repository Link -->
           <div class="nav-item d-none d-md-flex me-2">
             <a href="https://git.techniverse.net/scriptos/keywarden" class="btn btn-header-modern btn-sm" target="_blank" rel="noopener noreferrer" title="Source code on Gitea">

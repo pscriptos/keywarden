@@ -29,6 +29,7 @@
 - **Two-Factor Authentication** — TOTP-based MFA, optionally enforced for all users
 - **Password Policies & Account Lockout** — Configurable complexity rules and brute-force protection
 - **Audit Log** — Every action tracked with user, IP, timestamp, and details
+- **Update Notifications** — Automatic update check with version badge in the header for admins
 - **Encrypted Backup/Restore** — Full database export with password-based encryption
 - **Docker-Native** — Single container with embedded SQLite, no external database required
 

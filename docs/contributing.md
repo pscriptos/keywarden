@@ -42,6 +42,9 @@ go mod download
 # Build
 CGO_ENABLED=1 go build -o keywarden ./cmd/keywarden/
 
+# Build with version (optional, enables update checker)
+CGO_ENABLED=1 go build -ldflags="-X 'main.Version=v1.0.0'" -o keywarden ./cmd/keywarden/
+
 # Run
 ./keywarden
 ```
@@ -82,7 +85,8 @@ keywarden/
 │   │   ├── ratelimit.go        # IP-based rate limiting middleware
 │   │   └── sizelimit.go        # Request body size limit middleware
 │   ├── servers/servers.go      # Server and group management, access assignments
-│   └── sshutil/keygen.go       # SSH key generation (RSA, Ed25519, Ed448)
+│   ├── sshutil/keygen.go       # SSH key generation (RSA, Ed25519, Ed448)
+│   └── updater/updater.go      # Background update checker (Gitea releases API)
 ├── web/
 │   ├── embed.go                # Go embed directives
 │   ├── static/                 # CSS, JS, fonts (Tabler UI)

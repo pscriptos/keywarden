@@ -10,6 +10,17 @@
         {{with .SystemInfo}}
         <div class="datagrid">
           <div class="datagrid-item">
+            <div class="datagrid-title">Keywarden Version</div>
+            <div class="datagrid-content">
+              <span class="badge bg-blue-lt">{{appVersion}}</span>
+              {{if updateAvailable}}
+              <a href="{{releaseURL}}" target="_blank" rel="noopener noreferrer" class="badge bg-yellow-lt ms-1" title="Update verfügbar">
+                <i class="ti ti-download"></i> {{latestVersion}} verfügbar
+              </a>
+              {{end}}
+            </div>
+          </div>
+          <div class="datagrid-item">
             <div class="datagrid-title">Runtime Environment</div>
             <div class="datagrid-content">
               {{if eq .Runtime "Docker"}}

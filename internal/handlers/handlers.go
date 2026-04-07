@@ -39,6 +39,7 @@ import (
 	"git.techniverse.net/scriptos/keywarden/internal/models"
 	"git.techniverse.net/scriptos/keywarden/internal/security"
 	"git.techniverse.net/scriptos/keywarden/internal/servers"
+	"git.techniverse.net/scriptos/keywarden/internal/updater"
 	"git.techniverse.net/scriptos/keywarden/internal/worker"
 )
 
@@ -59,6 +60,7 @@ type Handler struct {
 	cron          *cron.Service
 	worker        *worker.Service
 	mail          *mail.Service
+	updater       *updater.Service
 	db            *database.DB // direct database access for backup/restore
 	templates     map[string]*template.Template
 	sessions      map[string]*sessionData // cookie -> session data with timeout tracking
@@ -251,7 +253,7 @@ func formatUptime(start time.Time) string {
 }
 
 // New creates a new Handler
-func New(authSvc *auth.Service, keysSvc *keys.Service, serversSvc *servers.Service, deploySvc *deploy.Service, auditSvc *audit.Service, cronSvc *cron.Service, workerSvc *worker.Service, mailSvc *mail.Service, db *database.DB, templateFS embed.FS, staticFS embed.FS, dataDir string, secureCookies bool, baseURL string) *Handler {
+func New(authSvc *auth.Service, keysSvc *keys.Service, serversSvc *servers.Service, deploySvc *deploy.Service, auditSvc *audit.Service, cronSvc *cron.Service, workerSvc *worker.Service, mailSvc *mail.Service, db *database.DB, templateFS embed.FS, staticFS embed.FS, dataDir string, secureCookies bool, baseURL string, updaterSvc *updater.Service) *Handler {
 	// Create sub-FS so /static/css/... maps to static/css/... in embed
 	staticSub, err := fs.Sub(staticFS, "static")
 	if err != nil {
@@ -273,6 +275,7 @@ func New(authSvc *auth.Service, keysSvc *keys.Service, serversSvc *servers.Servi
 		cron:          cronSvc,
 		worker:        workerSvc,
 		mail:          mailSvc,
+		updater:       updaterSvc,
 		db:            db,
 		sessions:      make(map[string]*sessionData),
 		pending:       make(map[string]int64),
@@ -301,6 +304,18 @@ func (h *Handler) loadTemplates(templateFS embed.FS) {
 				return "Keywarden"
 			}
 			return name
+		},
+		"appVersion": func() string {
+			return h.updater.CurrentVersion()
+		},
+		"updateAvailable": func() bool {
+			return h.updater.HasUpdate()
+		},
+		"latestVersion": func() string {
+			return h.updater.LatestVersion()
+		},
+		"releaseURL": func() string {
+			return h.updater.ReleaseURL()
 		},
 	}
 

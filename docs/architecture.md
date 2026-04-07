@@ -39,6 +39,7 @@ internal/
   security/               ← CSRF, security headers, rate limiting, proxy detection
   servers/                ← Server and server group management, access assignments
   sshutil/                ← SSH key generation (RSA, Ed25519, Ed448)
+  updater/                ← Background update checker (Gitea releases API)
   worker/                 ← Background key enforcement worker (Bastillion-style)
 web/
   embed.go                ← Go embed directives for templates and static files
