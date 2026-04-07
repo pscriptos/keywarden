@@ -226,7 +226,7 @@
             <button class="btn btn-outline-secondary" type="button" onclick="toggleMasterKey()" title="Show/Hide">
               <i class="ti ti-eye" id="masterKeyEyeIcon"></i>
             </button>
-            <button class="btn btn-outline-primary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('masterKeyValue').value); this.innerHTML='<i class=\'ti ti-check\'></i>'; setTimeout(()=>this.innerHTML='<i class=\'ti ti-copy\'></i>', 2000);" title="Copy">
+            <button class="btn btn-outline-primary" type="button" onclick="copyMasterKey(this)" title="Copy">
               <i class="ti ti-copy"></i>
             </button>
           </div>
@@ -236,6 +236,26 @@
           <code>{{.MasterKeyFingerprint}}</code>
         </div>
         <script>
+        function copyMasterKey(btn) {
+          var text = document.getElementById('masterKeyValue').value;
+          if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(function() {
+              btn.innerHTML = '<i class="ti ti-check"></i>';
+              setTimeout(function() { btn.innerHTML = '<i class="ti ti-copy"></i>'; }, 2000);
+            });
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            btn.innerHTML = '<i class="ti ti-check"></i>';
+            setTimeout(function() { btn.innerHTML = '<i class="ti ti-copy"></i>'; }, 2000);
+          }
+        }
         function toggleMasterKey() {
           var input = document.getElementById('masterKeyDisplay');
           var icon = document.getElementById('masterKeyEyeIcon');
