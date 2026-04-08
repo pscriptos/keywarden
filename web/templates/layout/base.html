@@ -8,7 +8,7 @@
     <title>{{.Title}} - {{appName}}</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <!-- Preload icon font to prevent re-decode lag on tab restore -->
-    <link rel="preload" href="/static/css/fonts/tabler-icons.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/static/css/fonts/tabler-icons.woff2?v3.6.0" as="font" type="font/woff2" crossorigin>
     <!-- Resolve theme BEFORE loading CSS to prevent FOUC (flash of unstyled content) -->
     <script>
       (function() {
@@ -160,7 +160,7 @@
       [data-bs-theme="dark"] .page-body { background: #0F1829; }
       html[data-bs-theme="dark"],
       html[data-bs-theme="dark"] body { background-color: #0F1829 !important; }
-      .page-body { content-visibility: auto; contain-intrinsic-size: auto 500px; }
+      /* content-visibility removed – causes Firefox to freeze/re-layout on tab hover */
 
       /* ── Narrower dashboard stat cards ── */
       .stat-card-narrow { max-width: 220px; }
