@@ -46,7 +46,7 @@ The Dockerfile uses a two-stage build:
 
 The runtime container runs as a non-root user (`keywarden`).
 
-The build accepts an optional `VERSION` build arg (e.g. `--build-arg VERSION=v1.0.0`) which is injected into the binary via `-ldflags`. This enables the built-in update checker to compare the running version against the latest Gitea release. If omitted, the version defaults to `dev` and the update checker is disabled.
+The build accepts an optional `VERSION` build arg (e.g. `--build-arg VERSION=v1.0.0`) which is injected into the binary via `-ldflags`. If omitted, the version is automatically extracted from `internal/version/version.go`. The CI release pipeline passes the Git tag as `VERSION` automatically.
 
 ### Docker Compose
 

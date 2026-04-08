@@ -223,7 +223,7 @@ Navigate to **System** to view runtime information:
 
 Keywarden automatically checks for new releases in the background by querying the Gitea releases API. If a newer version is available, a yellow update badge is displayed in the top header for **Admin** and **Owner** users. The badge links directly to the release page on Gitea.
 
-The update checker is only active when the application was built with a version tag (via `--build-arg VERSION=...`). Development builds (`dev`) skip the check entirely.
+The update checker is only active when the application was built with a proper version tag. Development builds without a version skip the check entirely.
 
 ## Admin Settings (Owner Only)
 

@@ -59,6 +59,8 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.tag }}
           tags: |
             ${{ steps.version.outputs.registry }}/${{ secrets.REGISTRY_USER }}/${{ env.IMAGE_NAME }}:latest
             ${{ steps.version.outputs.registry }}/${{ secrets.REGISTRY_USER }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
