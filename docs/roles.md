@@ -35,6 +35,7 @@ Owner  →  Admin  →  User
 | Test server connectivity | ❌ | ✅ | ✅ |
 | **Deployments** | | | |
 | Manual key deployment | ❌ | ✅ | ✅ |
+| Deploy system master key | ❌ | ❌ | ✅ |
 | Group deployment | ❌ | ✅ | ✅ |
 | **Access Assignments** | | | |
 | Create/edit/delete assignments | ❌ | ✅ | ✅ |
@@ -88,6 +89,7 @@ Admins **cannot** access the Admin Settings page, regenerate the master key, man
 
 The **Owner** role has unrestricted access. In addition to all Admin permissions, the owner can:
 
+- Deploy the system master key to servers (via the Deploy page)
 - Access the Admin Settings page
 - Configure application settings (app name, session timeout, default key type)
 - Configure security settings (password policy, account lockout, MFA enforcement)

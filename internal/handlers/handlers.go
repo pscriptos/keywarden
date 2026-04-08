@@ -1434,6 +1434,36 @@ func (h *Handler) handleServerTestAuth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// masterKeyForDeploy returns the system master key as a virtual SSHKey entry for deployment.
+// Returns nil if the master key is not available.
+func (h *Handler) masterKeyForDeploy() *models.SSHKey {
+	pub, err := h.keys.GetSystemMasterKeyPublic()
+	if err != nil || pub == "" {
+		return nil
+	}
+	fp, _ := h.keys.GetSystemMasterKeyFingerprint()
+	return &models.SSHKey{
+		ID:          -1,
+		UserID:      0,
+		Name:        "[MASTER] System Master Key",
+		KeyType:     "ed25519",
+		PublicKey:   pub,
+		Fingerprint: fp,
+	}
+}
+
+// prependMasterKey adds the system master key to the key list if the user is an owner.
+func (h *Handler) prependMasterKey(keyList []models.SSHKey, role string) []models.SSHKey {
+	if !isOwner(role) {
+		return keyList
+	}
+	mk := h.masterKeyForDeploy()
+	if mk == nil {
+		return keyList
+	}
+	return append([]models.SSHKey{*mk}, keyList...)
+}
+
 func (h *Handler) handleDeploy(w http.ResponseWriter, r *http.Request) {
 	userID := h.getUserID(r)
 	user, _ := h.auth.GetUserByID(userID)
@@ -1441,6 +1471,9 @@ func (h *Handler) handleDeploy(w http.ResponseWriter, r *http.Request) {
 	serverList, _ := h.servers.GetAllServers()
 	groups, _ := h.servers.GetAllGroups()
 	deployments, _ := h.deploy.GetDeployments(userID)
+
+	// Owner can deploy the system master key
+	keyList = h.prependMasterKey(keyList, user.Role)
 
 	if r.Method == http.MethodGet {
 		data := &PageData{
@@ -1461,13 +1494,25 @@ func (h *Handler) handleDeploy(w http.ResponseWriter, r *http.Request) {
 	serverID, _ := strconv.ParseInt(r.FormValue("server_id"), 10, 64)
 	authMethod := r.FormValue("auth_method")
 
-	key, err := h.keys.GetKeyByID(keyID, userID)
-	if err != nil {
-		// Try global access for admin/owner deploying other users' keys
-		key, err = h.keys.GetKeyByIDGlobal(keyID)
-		if err != nil {
+	var key *models.SSHKey
+	var err error
+
+	if keyID == -1 && isOwner(user.Role) {
+		// Owner deploying the system master key
+		key = h.masterKeyForDeploy()
+		if key == nil {
 			http.Redirect(w, r, "/deploy", http.StatusSeeOther)
 			return
+		}
+	} else {
+		key, err = h.keys.GetKeyByID(keyID, userID)
+		if err != nil {
+			// Try global access for admin/owner deploying other users' keys
+			key, err = h.keys.GetKeyByIDGlobal(keyID)
+			if err != nil {
+				http.Redirect(w, r, "/deploy", http.StatusSeeOther)
+				return
+			}
 		}
 	}
 
@@ -1527,13 +1572,25 @@ func (h *Handler) handleDeployGroup(w http.ResponseWriter, r *http.Request) {
 	groupID, _ := strconv.ParseInt(r.FormValue("group_id"), 10, 64)
 	authMethod := r.FormValue("auth_method")
 
-	key, err := h.keys.GetKeyByID(keyID, userID)
-	if err != nil {
-		// Try global access for admin/owner deploying other users' keys
-		key, err = h.keys.GetKeyByIDGlobal(keyID)
-		if err != nil {
+	var key *models.SSHKey
+	var keyErr error
+
+	if keyID == -1 && isOwner(user.Role) {
+		// Owner deploying the system master key
+		key = h.masterKeyForDeploy()
+		if key == nil {
 			http.Redirect(w, r, "/deploy", http.StatusSeeOther)
 			return
+		}
+	} else {
+		key, keyErr = h.keys.GetKeyByID(keyID, userID)
+		if keyErr != nil {
+			// Try global access for admin/owner deploying other users' keys
+			key, keyErr = h.keys.GetKeyByIDGlobal(keyID)
+			if keyErr != nil {
+				http.Redirect(w, r, "/deploy", http.StatusSeeOther)
+				return
+			}
 		}
 	}
 
@@ -1546,6 +1603,7 @@ func (h *Handler) handleDeployGroup(w http.ResponseWriter, r *http.Request) {
 	members, err := h.servers.GetGroupMembersGlobal(groupID)
 	if err != nil || len(members) == 0 {
 		keyList, _ := h.keys.GetAllKeys()
+		keyList = h.prependMasterKey(keyList, user.Role)
 		serverList, _ := h.servers.GetAllServers()
 		groups, _ := h.servers.GetAllGroups()
 		deployments, _ := h.deploy.GetDeployments(userID)
@@ -1601,6 +1659,7 @@ func (h *Handler) handleDeployGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyList, _ := h.keys.GetAllKeys()
+	keyList = h.prependMasterKey(keyList, user.Role)
 	serverList, _ := h.servers.GetAllServers()
 	groups, _ := h.servers.GetAllGroups()
 	deployments, _ := h.deploy.GetDeployments(userID)

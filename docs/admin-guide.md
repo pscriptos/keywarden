@@ -59,9 +59,12 @@ Server groups are used as targets for:
 1. Navigate to **Deploy**
 2. Select an **SSH key** from the dropdown (shows all keys from all users)
 3. Select a **target server**
-4. Click **Deploy**
+4. Choose an authentication method (password or existing key)
+5. Click **Deploy**
 
-Keywarden connects to the target server using the system master key and appends the selected public key to the server user's `~/.ssh/authorized_keys`.
+Keywarden connects to the target server and appends the selected public key to the server user's `~/.ssh/authorized_keys`.
+
+> **Owner only:** The SSH key dropdown includes the **[MASTER] System Master Key** as the first option. This allows the owner to deploy the system master key directly to servers from the Deploy page — useful for initial server setup or re-deployment after master key regeneration.
 
 ### Group Deployment
 
