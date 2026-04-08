@@ -133,6 +133,7 @@ func main() {
 
 	// Build middleware chain (innermost → outermost)
 	var h http.Handler = mux
+	h = security.GzipMiddleware()(h)
 	h = security.CSRFMiddleware(cfg.SecureCookies)(h)
 	h = security.SizeLimitMiddleware(cfg.MaxRequestSize)(h)
 	h = security.RateLimitMiddleware(cfg.RateLimitLogin)(h)
