@@ -19,9 +19,12 @@ type Service struct {
 	key []byte // 32 bytes for AES-256
 }
 
-// NewService creates a new encryption service from a passphrase
+// NewService creates a new encryption service from a passphrase.
+//
+// NOTE: Key derivation currently uses SHA-256 for backward compatibility with
+// existing encrypted data. A migration to a proper KDF (e.g. Argon2id) would
+// require re-encrypting all stored secrets and is tracked as a future improvement.
 func NewService(passphrase string) *Service {
-	// Derive a 32-byte key from the passphrase using SHA-256
 	hash := sha256.Sum256([]byte(passphrase))
 	return &Service{key: hash[:]}
 }

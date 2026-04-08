@@ -567,11 +567,13 @@ func (h *Handler) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 			h.mu.Unlock()
 			logging.Info("Session expired for user ID %d due to inactivity (%v timeout)", sess.UserID, timeout)
 			http.SetCookie(w, &http.Cookie{
-				Name:   "keywarden_session",
-				Value:  "",
-				Path:   "/",
-				Secure: h.secureCookies,
-				MaxAge: -1,
+				Name:     "keywarden_session",
+				Value:    "",
+				Path:     "/",
+				HttpOnly: true,
+				Secure:   h.secureCookies,
+				SameSite: http.SameSiteStrictMode,
+				MaxAge:   -1,
 			})
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
@@ -856,11 +858,13 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:   "keywarden_session",
-		Value:  "",
-		Path:   "/",
-		Secure: h.secureCookies,
-		MaxAge: -1,
+		Name:     "keywarden_session",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   h.secureCookies,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   -1,
 	})
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)

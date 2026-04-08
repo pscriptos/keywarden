@@ -77,6 +77,10 @@ func (s *Service) Register(username, email, password, role string, mustChangePas
 	}, nil
 }
 
+// dummyHash is a pre-computed bcrypt hash used for constant-time comparison
+// when a user is not found, preventing timing-based username enumeration.
+var dummyHash, _ = bcrypt.GenerateFromPassword([]byte("dummy-constant-time-padding"), bcrypt.DefaultCost)
+
 // Login authenticates a user and returns the user if successful
 func (s *Service) Login(username, password string) (*models.User, error) {
 	user := &models.User{}
@@ -86,6 +90,10 @@ func (s *Service) Login(username, password string) (*models.User, error) {
 	).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.Role, &user.MFAEnabled, &user.MFASecret, &user.Theme, &user.EmailNotifyLogin, &user.MustChangePassword, &user.FailedLoginAttempts, &user.LockedUntil, &user.CreatedAt, &user.UpdatedAt)
 
 	if err == sql.ErrNoRows {
+		// Perform a dummy bcrypt comparison to prevent timing-based username enumeration.
+		// Without this, an attacker could distinguish "user not found" (fast) from
+		// "wrong password" (slow due to bcrypt) by measuring response time.
+		bcrypt.CompareHashAndPassword(dummyHash, []byte(password))
 		return nil, ErrInvalidCredentials
 	}
 	if err != nil {
@@ -311,17 +319,27 @@ func (s *Service) markInitialSetupComplete() {
 	)
 }
 
-// generateSecurePassword creates a cryptographically secure random password
+// generateSecurePassword creates a cryptographically secure random password.
+// It uses rejection sampling to avoid modulo bias when mapping random bytes
+// to the character set.
 func generateSecurePassword(length int) (string, error) {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, length)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
+	const cLen = byte(len(charset))             // 62
+	const maxUnbiased = 256 - (256 % int(cLen)) // 252 — largest multiple of 62 that fits in a byte
+
+	result := make([]byte, length)
+	for i := 0; i < length; {
+		var b [1]byte
+		if _, err := rand.Read(b[:]); err != nil {
+			return "", err
+		}
+		if int(b[0]) >= maxUnbiased {
+			continue // reject to eliminate modulo bias
+		}
+		result[i] = charset[b[0]%cLen]
+		i++
 	}
-	for i := range b {
-		b[i] = charset[b[i]%byte(len(charset))]
-	}
-	return string(b), nil
+	return string(result), nil
 }
 
 // UpdateUser updates user details (admin function)

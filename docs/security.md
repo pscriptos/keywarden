@@ -180,7 +180,7 @@ WARN: KEYWARDEN_TRUSTED_PROXIES not set – proxy headers (X-Forwarded-For) are 
 - Cookie name: `keywarden_session`
 - Cookie flags:
   - `HttpOnly` — Not accessible via JavaScript
-  - `SameSite=Lax` — Prevents CSRF from external sites
+  - `SameSite=Strict` — Prevents CSRF from external sites
   - `Secure` — Only over HTTPS (when enabled)
   - `MaxAge=86400` — 24 hours
 - Sessions stored in-memory (not persisted across restarts)
