@@ -24,6 +24,9 @@ vendor/
 # AI workspace
 .ki-workspace/
 
+# Python (tools/subset-icons.py)
+.venv/
+
 # OS
 .DS_Store
 Thumbs.db
