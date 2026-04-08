@@ -2,7 +2,7 @@
 # Multi-stage build for minimal image size
 
 # Stage 1: Build
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26.2-alpine AS builder
 
 RUN apk add --no-cache gcc musl-dev sqlite-dev
 
