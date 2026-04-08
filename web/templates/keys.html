@@ -50,9 +50,9 @@
               <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
               <td>
                 <div class="btn-list flex-nowrap">
-                  <a href="/keys/{{.ID}}/view" class="btn btn-sm btn-icon btn-outline-primary" title="View Public Key">
+                  <button type="button" class="btn btn-sm btn-icon btn-outline-primary" title="View Public Key" onclick="showPublicKey({{.ID}}, '{{.Name}}')">
                     <i class="ti ti-eye"></i>
-                  </a>
+                  </button>
                   {{if eq .UserID $.User.ID}}
                   <a href="/keys/{{.ID}}/download" class="btn btn-sm btn-icon btn-outline-secondary" title="Download Private Key">
                     <i class="ti ti-download"></i>
@@ -92,9 +92,9 @@
               <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
               <td>
                 <div class="btn-list flex-nowrap">
-                  <a href="/keys/{{.ID}}/view" class="btn btn-sm btn-icon btn-outline-primary" title="View Public Key">
+                  <button type="button" class="btn btn-sm btn-icon btn-outline-primary" title="View Public Key" onclick="showPublicKey({{.ID}}, '{{.Name}}')">
                     <i class="ti ti-eye"></i>
-                  </a>
+                  </button>
                   <a href="/keys/{{.ID}}/download" class="btn btn-sm btn-icon btn-outline-secondary" title="Download Private Key">
                     <i class="ti ti-download"></i>
                   </a>
@@ -121,4 +121,104 @@
     </div>
   </div>
 </div>
+
+<!-- Public Key Modal -->
+<div class="modal modal-blur fade" id="publicKeyModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="ti ti-key text-primary"></i> Public Key: <span id="publicKeyName"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="publicKeyLoading" class="text-center py-4">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 text-secondary">Loading public key...</p>
+        </div>
+        <div id="publicKeyContent" class="d-none">
+          <textarea id="publicKeyText" class="form-control" rows="6" readonly style="font-family: monospace; font-size: 0.85rem;"></textarea>
+        </div>
+        <div id="publicKeyError" class="d-none">
+          <div class="alert alert-danger mb-0">
+            <i class="ti ti-alert-triangle"></i> Failed to load public key.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="copyPublicKeyBtn" onclick="copyPublicKey()">
+          <i class="ti ti-copy"></i> Copy to Clipboard
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPublicKey(keyID, keyName) {
+  document.getElementById('publicKeyName').textContent = keyName;
+  document.getElementById('publicKeyLoading').classList.remove('d-none');
+  document.getElementById('publicKeyContent').classList.add('d-none');
+  document.getElementById('publicKeyError').classList.add('d-none');
+  document.getElementById('copyPublicKeyBtn').classList.remove('d-none');
+
+  var modal = new bootstrap.Modal(document.getElementById('publicKeyModal'));
+  modal.show();
+
+  fetch('/keys/' + keyID + '/view')
+    .then(function(response) {
+      if (!response.ok) throw new Error('Failed to load key');
+      return response.text();
+    })
+    .then(function(pubKey) {
+      document.getElementById('publicKeyText').value = pubKey;
+      document.getElementById('publicKeyLoading').classList.add('d-none');
+      document.getElementById('publicKeyContent').classList.remove('d-none');
+    })
+    .catch(function() {
+      document.getElementById('publicKeyLoading').classList.add('d-none');
+      document.getElementById('publicKeyError').classList.remove('d-none');
+      document.getElementById('copyPublicKeyBtn').classList.add('d-none');
+    });
+}
+
+function copyPublicKey() {
+  var textarea = document.getElementById('publicKeyText');
+  var text = textarea.value;
+  var success = false;
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(onCopySuccess).catch(fallbackCopy);
+    return;
+  }
+  fallbackCopy();
+
+  function fallbackCopy() {
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    try { success = document.execCommand('copy'); } catch(e) { success = false; }
+    if (success) { onCopySuccess(); } else { alert('Copy failed. Please select the key manually and copy it.'); }
+  }
+
+  function onCopySuccess() {
+    var btn = document.getElementById('copyPublicKeyBtn');
+    btn.innerHTML = '<i class="ti ti-check"></i> Copied!';
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-success');
+    setTimeout(function() {
+      btn.innerHTML = '<i class="ti ti-copy"></i> Copy to Clipboard';
+      btn.classList.remove('btn-success');
+      btn.classList.add('btn-primary');
+    }, 2000);
+  }
+}
+
+// Move modal to body so it is not clipped by overflow containers
+document.addEventListener('DOMContentLoaded', function() {
+  var modal = document.getElementById('publicKeyModal');
+  if (modal) {
+    document.body.appendChild(modal);
+  }
+});
+</script>
 {{end}}

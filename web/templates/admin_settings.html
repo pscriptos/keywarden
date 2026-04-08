@@ -226,7 +226,7 @@
             <button class="btn btn-outline-secondary" type="button" onclick="toggleMasterKey()" title="Show/Hide">
               <i class="ti ti-eye" id="masterKeyEyeIcon"></i>
             </button>
-            <button class="btn btn-outline-primary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('masterKeyValue').value); this.innerHTML='<i class=\'ti ti-check\'></i>'; setTimeout(()=>this.innerHTML='<i class=\'ti ti-copy\'></i>', 2000);" title="Copy">
+            <button class="btn btn-outline-primary" type="button" onclick="copyMasterKey(this)" title="Copy">
               <i class="ti ti-copy"></i>
             </button>
           </div>
@@ -236,6 +236,26 @@
           <code>{{.MasterKeyFingerprint}}</code>
         </div>
         <script>
+        function copyMasterKey(btn) {
+          var text = document.getElementById('masterKeyValue').value;
+          if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(function() {
+              btn.innerHTML = '<i class="ti ti-check"></i>';
+              setTimeout(function() { btn.innerHTML = '<i class="ti ti-copy"></i>'; }, 2000);
+            });
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            btn.innerHTML = '<i class="ti ti-check"></i>';
+            setTimeout(function() { btn.innerHTML = '<i class="ti ti-copy"></i>'; }, 2000);
+          }
+        }
         function toggleMasterKey() {
           var input = document.getElementById('masterKeyDisplay');
           var icon = document.getElementById('masterKeyEyeIcon');
@@ -280,6 +300,87 @@
             </div>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Enforcement (Bastillion-Style) -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-shield-check"></i> Key Enforcement</h3>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <div class="d-flex">
+            <div><i class="ti ti-info-circle icon alert-icon"></i></div>
+            <div>
+              <h4 class="alert-title">Enforced Key Management</h4>
+              <div class="text-secondary">
+                When enabled, Keywarden periodically connects to all managed servers and verifies that only
+                authorized SSH keys (managed by Keywarden + the system master key) are present in
+                <code>authorized_keys</code>. Unauthorized keys are detected and optionally removed automatically.
+                <br><br>
+                <strong>Monitor mode:</strong> Detects unauthorized keys and logs them in the audit log, but does not remove them.<br>
+                <strong>Enforce mode:</strong> Detects unauthorized keys and <em>removes them automatically</em>, keeping only Keywarden-managed keys.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form action="/admin/settings" method="post">
+          <input type="hidden" name="form_type" value="enforcement_settings">
+          <div class="row mb-3">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Enforcement Mode</label>
+              <select name="enforce_mode" class="form-select">
+                <option value="disabled" {{if or (not .EnforcementStatus) (eq (index .EnforcementStatus "mode") "disabled")}}selected{{end}}>Disabled</option>
+                <option value="monitor" {{if and .EnforcementStatus (eq (index .EnforcementStatus "mode") "monitor")}}selected{{end}}>Monitor (detect only)</option>
+                <option value="enforce" {{if and .EnforcementStatus (eq (index .EnforcementStatus "mode") "enforce")}}selected{{end}}>Enforce (detect &amp; remove)</option>
+              </select>
+              <small class="form-hint">Choose how Keywarden handles unauthorized keys on your servers.</small>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Check Interval (minutes)</label>
+              <input type="number" name="enforce_interval" class="form-control"
+                     value="{{if and .EnforcementStatus (index .EnforcementStatus "interval")}}{{index .EnforcementStatus "interval"}}{{else}}15{{end}}"
+                     min="1" max="1440" placeholder="15">
+              <small class="form-hint">How often Keywarden checks the servers (1–1440 minutes).</small>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-device-floppy"></i> Save Enforcement Settings
+            </button>
+          </div>
+        </form>
+
+        {{if and .EnforcementStatus (index .EnforcementStatus "last_run")}}
+        <hr class="my-4">
+        <h4 class="mb-3"><i class="ti ti-history"></i> Last Enforcement Run</h4>
+        <div class="datagrid mb-3">
+          <div class="datagrid-item">
+            <div class="datagrid-title">Last Run</div>
+            <div class="datagrid-content">{{index .EnforcementStatus "last_run"}}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">Result</div>
+            <div class="datagrid-content">{{index .EnforcementStatus "last_result"}}</div>
+          </div>
+        </div>
+        {{end}}
+
+        {{if and .EnforcementStatus (ne (index .EnforcementStatus "mode") "disabled")}}
+        <hr class="my-4">
+        <h4 class="mb-3"><i class="ti ti-player-play"></i> Manual Run</h4>
+        <form action="/admin/enforcement/run" method="post" onsubmit="return confirm('Start a key enforcement run now? This will connect to all managed servers.');">
+          <button type="submit" class="btn btn-warning">
+            <i class="ti ti-player-play"></i> Run Enforcement Now
+          </button>
+          <small class="form-hint d-inline-block ms-2">Trigger an immediate enforcement check on all servers.</small>
+        </form>
+        {{end}}
       </div>
     </div>
   </div>

@@ -34,6 +34,7 @@ Keywarden provides a clean web UI to generate, import, and securely store SSH ke
 - **Temporary Access (Cron Jobs)** — Schedule time-limited access with automatic key removal, user disabling, or user deletion on expiry
 - **Three-Tier Role System** — Owner, Admin, and User roles with clear permission boundaries
 - **User Invitations** — Invite new users via secure email links with self-service password setup
+- **Key Enforcement** — Bastillion-style enforced key management: detect and remove unauthorized SSH keys automatically
 - **TOTP Two-Factor Authentication** — Optional or enforced MFA for all users
 - **Password Policies** — Configurable complexity requirements with account lockout
 - **Email Notifications** — Login alerts and invitation emails via SMTP

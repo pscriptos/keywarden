@@ -32,6 +32,9 @@ docker compose build
 
 # Or build manually
 docker build -t keywarden .
+
+# Build with a specific version tag (recommended for releases)
+docker build --build-arg VERSION=v1.0.0 -t keywarden:v1.0.0 .
 ```
 
 ### Multi-Stage Build
@@ -42,6 +45,8 @@ The Dockerfile uses a two-stage build:
 2. **Runtime stage** (`alpine:3.21`): Minimal image with only the compiled binary and runtime dependencies (`ca-certificates`, `sqlite-libs`, `tzdata`, `curl`)
 
 The runtime container runs as a non-root user (`keywarden`).
+
+The build accepts an optional `VERSION` build arg (e.g. `--build-arg VERSION=v1.0.0`) which is injected into the binary via `-ldflags`. This enables the built-in update checker to compare the running version against the latest Gitea release. If omitted, the version defaults to `dev` and the update checker is disabled.
 
 ### Docker Compose
 

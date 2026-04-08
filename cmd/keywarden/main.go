@@ -24,8 +24,17 @@ import (
 	"git.techniverse.net/scriptos/keywarden/internal/mail"
 	"git.techniverse.net/scriptos/keywarden/internal/security"
 	"git.techniverse.net/scriptos/keywarden/internal/servers"
+	"git.techniverse.net/scriptos/keywarden/internal/updater"
+	"git.techniverse.net/scriptos/keywarden/internal/worker"
 	"git.techniverse.net/scriptos/keywarden/web"
 )
+
+// Version is set at build time via -ldflags:
+//
+//	go build -ldflags "-X main.Version=v1.0.0" ./cmd/keywarden/
+//
+// When building with Docker, pass --build-arg VERSION=v1.0.0
+var Version = "dev"
 
 func main() {
 	// Handle CLI subcommands before starting the server
@@ -46,7 +55,7 @@ func main() {
 	// Initialize structured logging
 	logging.Init(cfg.LogLevel)
 
-	logging.Info("🔑 Keywarden - Centralized SSH Key Management and Deployment")
+	logging.Info("🔑 Keywarden %s - Centralized SSH Key Management and Deployment", Version)
 	logging.Info("   https://git.techniverse.net/scriptos/keywarden")
 
 	// Validate data paths – relative paths inside a container bypass the
@@ -76,6 +85,7 @@ func main() {
 	deploySvc := deploy.NewService(db)
 	auditSvc := audit.NewService(db)
 	cronSvc := cron.NewService(db, deploySvc, keysSvc, serversSvc, auditSvc)
+	workerSvc := worker.NewService(db, deploySvc, keysSvc, serversSvc, auditSvc)
 	mailSvc := mail.NewService(cfg)
 
 	// Create default owner if no users exist (password is auto-generated)
@@ -115,8 +125,11 @@ func main() {
 		logging.Info("Base URL: %s", cfg.BaseURL)
 	}
 
+	// Initialize update checker
+	updaterSvc := updater.NewService(Version)
+
 	// Setup HTTP handlers
-	handler := handlers.New(authSvc, keysSvc, serversSvc, deploySvc, auditSvc, cronSvc, mailSvc, db, web.TemplateFS, web.StaticFS, cfg.DataDir, cfg.SecureCookies, cfg.BaseURL)
+	handler := handlers.New(authSvc, keysSvc, serversSvc, deploySvc, auditSvc, cronSvc, workerSvc, mailSvc, db, web.TemplateFS, web.StaticFS, cfg.DataDir, cfg.SecureCookies, cfg.BaseURL, updaterSvc)
 
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
@@ -141,6 +154,14 @@ func main() {
 	// Start cron scheduler
 	cronSvc.Start()
 	defer cronSvc.Stop()
+
+	// Start key enforcement worker
+	workerSvc.Start()
+	defer workerSvc.Stop()
+
+	// Start update checker
+	updaterSvc.Start()
+	defer updaterSvc.Stop()
 
 	// Start server
 	addr := ":" + cfg.Port
@@ -272,7 +293,7 @@ func handleResetPassword(args []string) {
 
 // printUsage displays available CLI subcommands
 func printUsage() {
-	fmt.Println("Keywarden - Centralized SSH Key Management and Deployment")
+	fmt.Printf("Keywarden %s - Centralized SSH Key Management and Deployment\n", Version)
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  keywarden                                         Start the server")

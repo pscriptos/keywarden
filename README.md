@@ -2,7 +2,9 @@
 
 **Keywarden** is a self-hosted web application for centralized SSH key management and deployment. It lets you generate, store, and deploy SSH keys to Linux servers from a single web interface — with full audit logging, role-based access control, and automated temporary access scheduling.
 
----
+
+![Keywarden Dashboard](assets/img/dashboard.png)
+
 
 ## ⚠️ Alpha Software — Important Notice
 
@@ -23,9 +25,11 @@
 - **Temporary Access** — Schedule time-limited access with automatic expiry (key removal, user disable, or user deletion)
 - **Three-Tier Roles** — Owner, Admin, and User with distinct permissions
 - **User Invitations** — Invite users via secure email links
+- **Key Enforcement** — Bastillion-style enforced key management: automatically detect and remove unauthorized SSH keys from servers
 - **Two-Factor Authentication** — TOTP-based MFA, optionally enforced for all users
 - **Password Policies & Account Lockout** — Configurable complexity rules and brute-force protection
 - **Audit Log** — Every action tracked with user, IP, timestamp, and details
+- **Update Notifications** — Automatic update check with version badge in the header for admins
 - **Encrypted Backup/Restore** — Full database export with password-based encryption
 - **Docker-Native** — Single container with embedded SQLite, no external database required
 

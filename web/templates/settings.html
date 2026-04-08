@@ -11,10 +11,32 @@
           <div class="row align-items-end">
             <div class="col-auto">
               <label class="form-label">Theme</label>
-              <select name="theme" class="form-select" style="width: 250px;">
-                <option value="auto" {{if or (not .User) (eq .User.Theme "") (eq .User.Theme "auto")}}selected{{end}}>Automatic (System)</option>
-                <option value="light" {{if and .User (eq .User.Theme "light")}}selected{{end}}>Light</option>
-                <option value="dark" {{if and .User (eq .User.Theme "dark")}}selected{{end}}>Dark</option>
+              <select name="theme" class="form-select" style="width: 280px;">
+                <optgroup label="🌊 Ocean (Standard)">
+                  <option value="ocean-auto" {{if or (not .User) (eq .User.Theme "") (eq .User.Theme "auto") (eq .User.Theme "ocean-auto")}}selected{{end}}>Ocean (System)</option>
+                  <option value="ocean-light" {{if or (and .User (eq .User.Theme "ocean-light")) (and .User (eq .User.Theme "light"))}}selected{{end}}>Ocean Light</option>
+                  <option value="ocean-dark" {{if or (and .User (eq .User.Theme "ocean-dark")) (and .User (eq .User.Theme "dark"))}}selected{{end}}>Ocean Dark</option>
+                </optgroup>
+                <optgroup label="🌲 Forest">
+                  <option value="forest-auto" {{if and .User (eq .User.Theme "forest-auto")}}selected{{end}}>Forest (System)</option>
+                  <option value="forest-light" {{if and .User (eq .User.Theme "forest-light")}}selected{{end}}>Forest Light</option>
+                  <option value="forest-dark" {{if and .User (eq .User.Theme "forest-dark")}}selected{{end}}>Forest Dark</option>
+                </optgroup>
+                <optgroup label="🌅 Sunset">
+                  <option value="sunset-auto" {{if and .User (eq .User.Theme "sunset-auto")}}selected{{end}}>Sunset (System)</option>
+                  <option value="sunset-light" {{if and .User (eq .User.Theme "sunset-light")}}selected{{end}}>Sunset Light</option>
+                  <option value="sunset-dark" {{if and .User (eq .User.Theme "sunset-dark")}}selected{{end}}>Sunset Dark</option>
+                </optgroup>
+                <optgroup label="🌹 Rose">
+                  <option value="rose-auto" {{if and .User (eq .User.Theme "rose-auto")}}selected{{end}}>Rose (System)</option>
+                  <option value="rose-light" {{if and .User (eq .User.Theme "rose-light")}}selected{{end}}>Rose Light</option>
+                  <option value="rose-dark" {{if and .User (eq .User.Theme "rose-dark")}}selected{{end}}>Rose Dark</option>
+                </optgroup>
+                <optgroup label="❄️ Nord">
+                  <option value="nord-auto" {{if and .User (eq .User.Theme "nord-auto")}}selected{{end}}>Nord (System)</option>
+                  <option value="nord-light" {{if and .User (eq .User.Theme "nord-light")}}selected{{end}}>Nord Light</option>
+                  <option value="nord-dark" {{if and .User (eq .User.Theme "nord-dark")}}selected{{end}}>Nord Dark</option>
+                </optgroup>
               </select>
             </div>
             <div class="col-auto">

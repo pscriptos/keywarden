@@ -209,3 +209,58 @@ When deploying keys to servers, Keywarden:
 8. **Network isolation**: Restrict access to Keywarden and managed servers to trusted networks
 9. **Keep the encryption key safe**: Back up `KEYWARDEN_ENCRYPTION_KEY` securely — losing it means losing all private keys
 10. **Monitor the audit log**: Review login activity and deployment actions regularly
+11. **Enable key enforcement**: Use enforce mode to ensure only Keywarden-managed keys exist on your servers
+
+## Key Enforcement (Bastillion-Style)
+
+Keywarden includes an enforced key management feature inspired by [Bastillion](https://www.bastillion.io/). When enabled, a background worker periodically connects to all managed servers and ensures that only authorized SSH keys are present in `authorized_keys` files.
+
+### How It Works
+
+1. The enforcement worker runs at a configurable interval (default: 15 minutes)
+2. For each managed server and system user, it reads the current `authorized_keys`
+3. It compares the keys against the **desired state** derived from:
+   - All active access assignments (desired_state = "present")
+   - All active cron jobs (temporary access that has not yet expired)
+   - All direct key deployments (via the Deploy page)
+   - The system master key (always authorized)
+4. Unauthorized keys (not managed by Keywarden) are detected
+5. Depending on the mode, unauthorized keys are either logged or removed
+
+### Modes
+
+| Mode | Behavior |
+|---|---|
+| **Disabled** | No enforcement checks (default) |
+| **Monitor** | Detects unauthorized keys and logs them in the audit log, but does not remove them |
+| **Enforce** | Detects unauthorized keys and **removes them automatically**, replacing `authorized_keys` with only the authorized set |
+
+### Configuration
+
+Key enforcement is configured in **Admin Settings → Key Enforcement**:
+
+- **Enforcement Mode**: Disabled / Monitor / Enforce
+- **Check Interval**: How often the worker checks servers (1–1440 minutes)
+- **Run Now**: Trigger an immediate enforcement check
+
+### Audit Trail
+
+All enforcement actions are recorded in the audit log:
+
+| Action | Description |
+|---|---|
+| `enforcement_run` | An enforcement cycle completed (with summary) |
+| `enforcement_drift` | Unauthorized keys detected on a server |
+| `enforcement_applied` | Unauthorized keys were removed from a server |
+| `enforcement_failed` | An enforcement action failed (connection error, etc.) |
+| `enforcement_settings_changed` | Enforcement settings were modified |
+
+### Important Notes
+
+- The system master key is **always** considered authorized and will never be removed
+- Enforcement covers all system users that have active access assignments, cron jobs, or direct deployments in Keywarden
+- The server's admin user (used for SSH connections) is always checked
+- Enforcement requires the system master key to be deployed on target servers
+- In **enforce** mode, `authorized_keys` is atomically replaced (write to temp file, then move)
+- Manual runs can be triggered from the Admin Settings page
+

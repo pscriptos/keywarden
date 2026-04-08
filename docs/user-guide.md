@@ -57,11 +57,11 @@ The **Keys** page lists all your SSH keys with:
 
 Admins and owners see all keys in the system, grouped by owner.
 
-### Downloading Keys
+### Viewing and Downloading Keys
 
-From the key list, you can download:
-- **Public Key** — For deployment to servers
-- **Private Key** — Decrypted and downloaded (use with caution)
+From the key list, you can:
+- **View Public Key** — Opens a modal overlay showing the public key with a copy-to-clipboard button
+- **Download Private Key** — Decrypted and downloaded (use with caution)
 
 ### Deleting Keys
 
@@ -88,10 +88,22 @@ Navigate to **Settings** to manage your account:
 
 ### Theme
 
-Choose between:
-- **Auto** — Follows your system/browser preference
+KeyWarden offers five color themes, each available in three modes:
+
+| Theme | Description |
+|-------|-------------|
+| **Ocean** (default) | Cyan/teal accent |
+| **Forest** | Green accent |
+| **Sunset** | Amber/orange accent |
+| **Rose** | Pink accent |
+| **Nord** | Cool blue-gray accent |
+
+Each theme supports:
+- **System** — Follows your system/browser preference (light or dark)
 - **Light** — Always light mode
 - **Dark** — Always dark mode
+
+> Existing installations using the previous theme values (`auto`, `light`, `dark`) are automatically migrated to the Ocean theme.
 
 ### Password Change
 

@@ -209,11 +209,18 @@ Deleting a user removes their SSH keys, server records, and all related data (CA
 
 Navigate to **System** to view runtime information:
 
+- Application version (with update badge if a newer release is available)
 - Go version, OS, architecture
 - CPU count, goroutine count
 - Memory allocation
 - Runtime environment (Docker or native)
 - Hostname and uptime
+
+## Update Notifications
+
+Keywarden automatically checks for new releases in the background by querying the Gitea releases API. If a newer version is available, a yellow update badge is displayed in the top header for **Admin** and **Owner** users. The badge links directly to the release page on Gitea.
+
+The update checker is only active when the application was built with a version tag (via `--build-arg VERSION=...`). Development builds (`dev`) skip the check entirely.
 
 ## Admin Settings (Owner Only)
 
@@ -233,6 +240,14 @@ Navigate to **Admin Settings** (owner only) to configure:
 - **Password Policy** — Minimum length, uppercase, lowercase, digit, special character requirements
 - **Account Lockout** — Number of failed attempts before lockout and lockout duration
 - **MFA Enforcement** — Require all users to enable TOTP MFA
+
+### Key Enforcement
+
+- **Enforcement Mode** — Disabled (default), Monitor (log only), or Enforce (auto-remove unauthorized keys)
+- **Check Interval** — How often the worker scans servers (1–1440 minutes, default: 15)
+- **Run Now** — Trigger an immediate enforcement check
+
+See [Security — Key Enforcement](security.md#key-enforcement-bastillion-style) for details.
 
 ### Master Key
 

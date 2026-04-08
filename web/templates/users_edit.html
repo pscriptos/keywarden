@@ -38,6 +38,13 @@
           </div>
           <div class="mb-3">
             <label class="form-label required">Role</label>
+            {{if .IsInitialOwner}}
+            <select name="role" class="form-select" disabled>
+              <option value="owner" selected>Owner</option>
+            </select>
+            <input type="hidden" name="role" value="owner">
+            <small class="form-hint text-warning"><i class="ti ti-shield-lock"></i> The initial owner role cannot be changed. This account was created during installation and is permanently protected.</small>
+            {{else}}
             <select name="role" class="form-select">
               <option value="user" {{if eq .EditUser.Role "user"}}selected{{end}}>User</option>
               {{with $.User}}
@@ -47,6 +54,7 @@
               {{end}}
               {{end}}
             </select>
+            {{end}}
           </div>
           <div class="mb-3">
             <label class="form-label">MFA Status</label>

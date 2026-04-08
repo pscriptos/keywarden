@@ -246,5 +246,25 @@ func (d *DB) migrate() error {
 		}
 	}
 
+	// Migration: backfill initial_owner_id for existing installations
+	{
+		var migCount int
+		d.QueryRow(`SELECT COUNT(*) FROM _migrations WHERE name = 'backfill_initial_owner_id'`).Scan(&migCount)
+		if migCount == 0 {
+			// Only set if not already present (new installs set it in EnsureAdmin)
+			var existing string
+			err := d.QueryRow(`SELECT value FROM settings WHERE key = 'initial_owner_id'`).Scan(&existing)
+			if err != nil || existing == "" {
+				// Pick the oldest owner (lowest ID) as the initial owner
+				var ownerID int64
+				err := d.QueryRow(`SELECT id FROM users WHERE role = 'owner' ORDER BY id ASC LIMIT 1`).Scan(&ownerID)
+				if err == nil && ownerID > 0 {
+					d.Exec(`INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('initial_owner_id', CAST(? AS TEXT), CURRENT_TIMESTAMP)`, ownerID)
+				}
+			}
+			d.Exec(`INSERT INTO _migrations (name) VALUES ('backfill_initial_owner_id')`)
+		}
+	}
+
 	return nil
 }

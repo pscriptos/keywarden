@@ -2,7 +2,7 @@
 # Multi-stage build for minimal image size
 
 # Stage 1: Build
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26.2-alpine AS builder
 
 RUN apk add --no-cache gcc musl-dev sqlite-dev
 
@@ -11,7 +11,9 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=1 GOOS=linux go build -o keywarden -ldflags="-s -w" ./cmd/keywarden/
+
+ARG VERSION=dev
+RUN CGO_ENABLED=1 GOOS=linux go build -o keywarden -ldflags="-s -w -X main.Version=${VERSION}" ./cmd/keywarden/
 
 # Stage 2: Runtime
 FROM alpine:3.21

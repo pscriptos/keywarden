@@ -39,6 +39,8 @@ import (
 	"git.techniverse.net/scriptos/keywarden/internal/models"
 	"git.techniverse.net/scriptos/keywarden/internal/security"
 	"git.techniverse.net/scriptos/keywarden/internal/servers"
+	"git.techniverse.net/scriptos/keywarden/internal/updater"
+	"git.techniverse.net/scriptos/keywarden/internal/worker"
 )
 
 // sessionData holds session metadata for timeout tracking
@@ -56,7 +58,9 @@ type Handler struct {
 	deploy        *deploy.Service
 	audit         *audit.Service
 	cron          *cron.Service
+	worker        *worker.Service
 	mail          *mail.Service
+	updater       *updater.Service
 	db            *database.DB // direct database access for backup/restore
 	templates     map[string]*template.Template
 	sessions      map[string]*sessionData // cookie -> session data with timeout tracking
@@ -169,6 +173,13 @@ type PageData struct {
 
 	// System Information
 	SystemInfo *SystemInfo
+
+	// Key Enforcement
+	EnforcementStatus map[string]string
+
+	// Initial Owner protection
+	IsInitialOwner bool
+	InitialOwnerID int64
 }
 
 // SystemInfo holds runtime system information for the settings page
@@ -242,7 +253,7 @@ func formatUptime(start time.Time) string {
 }
 
 // New creates a new Handler
-func New(authSvc *auth.Service, keysSvc *keys.Service, serversSvc *servers.Service, deploySvc *deploy.Service, auditSvc *audit.Service, cronSvc *cron.Service, mailSvc *mail.Service, db *database.DB, templateFS embed.FS, staticFS embed.FS, dataDir string, secureCookies bool, baseURL string) *Handler {
+func New(authSvc *auth.Service, keysSvc *keys.Service, serversSvc *servers.Service, deploySvc *deploy.Service, auditSvc *audit.Service, cronSvc *cron.Service, workerSvc *worker.Service, mailSvc *mail.Service, db *database.DB, templateFS embed.FS, staticFS embed.FS, dataDir string, secureCookies bool, baseURL string, updaterSvc *updater.Service) *Handler {
 	// Create sub-FS so /static/css/... maps to static/css/... in embed
 	staticSub, err := fs.Sub(staticFS, "static")
 	if err != nil {
@@ -262,7 +273,9 @@ func New(authSvc *auth.Service, keysSvc *keys.Service, serversSvc *servers.Servi
 		deploy:        deploySvc,
 		audit:         auditSvc,
 		cron:          cronSvc,
+		worker:        workerSvc,
 		mail:          mailSvc,
+		updater:       updaterSvc,
 		db:            db,
 		sessions:      make(map[string]*sessionData),
 		pending:       make(map[string]int64),
@@ -291,6 +304,18 @@ func (h *Handler) loadTemplates(templateFS embed.FS) {
 				return "Keywarden"
 			}
 			return name
+		},
+		"appVersion": func() string {
+			return h.updater.CurrentVersion()
+		},
+		"updateAvailable": func() bool {
+			return h.updater.HasUpdate()
+		},
+		"latestVersion": func() string {
+			return h.updater.LatestVersion()
+		},
+		"releaseURL": func() string {
+			return h.updater.ReleaseURL()
 		},
 	}
 
@@ -432,6 +457,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/admin/masterkey/regenerate", h.requireOwner(h.handleMasterKeyRegenerate))
 	mux.HandleFunc("/admin/backup/export", h.requireOwner(h.handleBackupExport))
 	mux.HandleFunc("/admin/backup/import", h.requireOwner(h.handleBackupImport))
+	mux.HandleFunc("/admin/enforcement/run", h.requireOwner(h.handleEnforcementRunNow))
 }
 
 // handleAPIHealth returns a JSON health status (no auth required).
@@ -644,6 +670,11 @@ func isAdmin(role string) bool {
 // isOwner returns true if the role is owner
 func isOwner(role string) bool {
 	return role == "owner"
+}
+
+// getInitialOwnerID returns the user ID of the initial owner (0 if not set)
+func (h *Handler) getInitialOwnerID() int64 {
+	return h.auth.GetInitialOwnerID()
 }
 
 func (h *Handler) getUserID(r *http.Request) int64 {
@@ -1819,10 +1850,11 @@ func (h *Handler) handleUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := &PageData{
-		Title:  "User Management",
-		Active: "users",
-		User:   user,
-		Users:  users,
+		Title:          "User Management",
+		Active:         "users",
+		User:           user,
+		Users:          users,
+		InitialOwnerID: h.getInitialOwnerID(),
 	}
 	h.templates["users"].ExecuteTemplate(w, "base", data)
 }
@@ -1995,6 +2027,7 @@ func (h *Handler) handleUserAction(w http.ResponseWriter, r *http.Request) {
 				User:           user,
 				EditUser:       targetUser,
 				PasswordPolicy: &policy,
+				IsInitialOwner: h.auth.IsInitialOwner(targetID),
 			}
 			h.templates["users_edit"].ExecuteTemplate(w, "base", data)
 			return
@@ -2006,6 +2039,22 @@ func (h *Handler) handleUserAction(w http.ResponseWriter, r *http.Request) {
 		role := r.FormValue("role")
 		newPassword := r.FormValue("password")
 		forceChange := r.FormValue("must_change_password") == "1"
+
+		// Initial Owner protection: role must remain "owner"
+		if h.auth.IsInitialOwner(targetID) && role != "owner" {
+			policy := h.auth.GetPasswordPolicy()
+			data := &PageData{
+				Title:          "Edit User",
+				Active:         "users",
+				User:           user,
+				EditUser:       targetUser,
+				PasswordPolicy: &policy,
+				IsInitialOwner: true,
+				Flash:          &Flash{Type: "danger", Message: "The initial owner role cannot be changed. This account was created during installation and is permanently protected."},
+			}
+			h.templates["users_edit"].ExecuteTemplate(w, "base", data)
+			return
+		}
 
 		// Enforce role restrictions:
 		// - Admin can only assign "user" role
@@ -2100,6 +2149,11 @@ func (h *Handler) handleUserAction(w http.ResponseWriter, r *http.Request) {
 
 	case "delete":
 		if r.Method == http.MethodPost {
+			// Initial Owner protection: cannot be deleted
+			if h.auth.IsInitialOwner(targetID) {
+				http.Redirect(w, r, "/users", http.StatusSeeOther)
+				return
+			}
 			// Owner protection: cannot self-delete
 			if targetID == userID {
 				http.Redirect(w, r, "/users", http.StatusSeeOther)
@@ -2993,6 +3047,7 @@ func (h *Handler) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 			EmailEnabled:         h.mail.IsEnabled(),
 			MasterKeyPublic:      masterPub,
 			MasterKeyFingerprint: masterFP,
+			EnforcementStatus:    h.worker.GetStatus(),
 		}
 
 		// Check for flash message from query parameters (e.g. after backup restore)
@@ -3046,6 +3101,31 @@ func (h *Handler) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 		logging.Info("Security settings saved successfully")
 		if len(changed) > 0 {
 			h.audit.Log(userID, audit.ActionPasswordPolicyChanged, fmt.Sprintf("Security settings updated: %s", strings.Join(changed, ", ")), clientIP(r))
+		}
+	case "enforcement_settings":
+		// Key enforcement settings
+		batch := make(map[string]string)
+		enforceMode := r.FormValue("enforce_mode")
+		if enforceMode == "" {
+			enforceMode = "disabled"
+		}
+		batch["enforce_mode"] = enforceMode
+		changed = append(changed, "enforce_mode="+enforceMode)
+
+		enforceInterval := r.FormValue("enforce_interval")
+		if enforceInterval == "" {
+			enforceInterval = "15"
+		}
+		batch["enforce_interval"] = enforceInterval
+		changed = append(changed, "enforce_interval="+enforceInterval)
+
+		if err := h.auth.SetSettingsBatch(batch); err != nil {
+			logging.Error("Failed to save enforcement settings: %v", err)
+			http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("Failed to save enforcement settings: "+err.Error()), http.StatusSeeOther)
+			return
+		}
+		if len(changed) > 0 {
+			h.audit.Log(userID, audit.ActionEnforcementSettings, fmt.Sprintf("Enforcement settings updated: %s", strings.Join(changed, ", ")), clientIP(r))
 		}
 	default:
 		// Application settings (existing behavior)
@@ -3122,6 +3202,22 @@ func (h *Handler) handleMasterKeyRegenerate(w http.ResponseWriter, r *http.Reque
 	logging.Info("System master key regenerated by user %s", user.Username)
 	h.audit.Log(userID, audit.ActionMasterKeyRegenerated, fmt.Sprintf("System master key regenerated. New public key: %s", newPub[:40]+"..."), clientIP(r))
 	http.Redirect(w, r, "/admin/settings?flash_type=success&flash_msg="+url.QueryEscape("System master key successfully regenerated."), http.StatusSeeOther)
+}
+
+// handleEnforcementRunNow triggers an immediate key enforcement run (owner only)
+func (h *Handler) handleEnforcementRunNow(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/settings", http.StatusSeeOther)
+		return
+	}
+
+	userID := h.getUserID(r)
+	logging.Info("Key enforcement manual run triggered by user_id=%d", userID)
+	h.audit.Log(userID, audit.ActionEnforcementRun, "Manual key enforcement run triggered", clientIP(r))
+
+	h.worker.RunNow()
+
+	http.Redirect(w, r, "/admin/settings?flash_type=success&flash_msg="+url.QueryEscape("Key enforcement run started. Check the audit log for results."), http.StatusSeeOther)
 }
 
 // --- Cron Job Handlers ---

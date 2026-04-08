@@ -107,6 +107,13 @@ const (
 	ActionInvitationSendFailed = "invitation_send_failed"
 	ActionInvitationAccepted   = "invitation_accepted"
 	ActionInvitationFailed     = "invitation_failed"
+
+	// Key Enforcement
+	ActionEnforcementRun      = "enforcement_run"
+	ActionEnforcementDrift    = "enforcement_drift"
+	ActionEnforcementApplied  = "enforcement_applied"
+	ActionEnforcementFailed   = "enforcement_failed"
+	ActionEnforcementSettings = "enforcement_settings_changed"
 )
 
 // AuditEntry extends AuditLog with the username for display
