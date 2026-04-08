@@ -18,6 +18,8 @@ import (
 const (
 	// Gitea API endpoint for releases
 	releasesAPI = "https://git.techniverse.net/api/v1/repos/scriptos/keywarden/releases?limit=5"
+	// Public releases page URL
+	ReleasesPageURL = "https://git.techniverse.net/scriptos/keywarden/releases"
 	// How often to check for updates
 	checkInterval = 6 * time.Hour
 	// HTTP timeout for API requests

@@ -323,6 +323,9 @@ func (h *Handler) loadTemplates(templateFS embed.FS) {
 		"releaseURL": func() string {
 			return h.updater.ReleaseURL()
 		},
+		"releasesPageURL": func() string {
+			return updater.ReleasesPageURL
+		},
 		"loginBgImage": func() string {
 			bgPath := filepath.Join(h.dataDir, "branding", "login_bg")
 			if _, err := os.Stat(bgPath); err == nil {
