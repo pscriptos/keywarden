@@ -266,6 +266,12 @@ func New(authSvc *auth.Service, keysSvc *keys.Service, serversSvc *servers.Servi
 		logging.Warn("Failed to create avatars directory %s: %v", avatarsDir, err)
 	}
 
+	// Ensure branding directory exists
+	brandingDir := filepath.Join(dataDir, "branding")
+	if err := os.MkdirAll(brandingDir, 0700); err != nil {
+		logging.Warn("Failed to create branding directory %s: %v", brandingDir, err)
+	}
+
 	h := &Handler{
 		auth:          authSvc,
 		keys:          keysSvc,
@@ -316,6 +322,24 @@ func (h *Handler) loadTemplates(templateFS embed.FS) {
 		},
 		"releaseURL": func() string {
 			return h.updater.ReleaseURL()
+		},
+		"loginBgImage": func() string {
+			bgPath := filepath.Join(h.dataDir, "branding", "login_bg")
+			if _, err := os.Stat(bgPath); err == nil {
+				return "/branding/login-bg"
+			}
+			return ""
+		},
+		"loginCardStyle": func() string {
+			style, _ := h.auth.GetSetting("login_card_style")
+			if style == "" {
+				return "default"
+			}
+			return style
+		},
+		"loginSubtitle": func() string {
+			subtitle, _ := h.auth.GetSetting("login_subtitle")
+			return subtitle
 		},
 	}
 
@@ -399,6 +423,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/static/", h.handleStatic)
 
 	// Public routes
+	mux.HandleFunc("/branding/login-bg", h.handleLoginBgServe)
 	mux.HandleFunc("/login", h.handleLogin)
 	mux.HandleFunc("/login/mfa", h.handleLoginMFA)
 	mux.HandleFunc("/logout", h.handleLogout)
@@ -454,6 +479,8 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 	// Owner-only routes
 	mux.HandleFunc("/admin/settings", h.requireOwner(h.handleAdminSettings))
+	mux.HandleFunc("/admin/branding/upload", h.requireOwner(h.handleLoginBrandingUpload))
+	mux.HandleFunc("/admin/branding/remove-bg", h.requireOwner(h.handleLoginBrandingRemoveBg))
 	mux.HandleFunc("/admin/masterkey/regenerate", h.requireOwner(h.handleMasterKeyRegenerate))
 	mux.HandleFunc("/admin/backup/export", h.requireOwner(h.handleBackupExport))
 	mux.HandleFunc("/admin/backup/import", h.requireOwner(h.handleBackupImport))
@@ -2543,9 +2570,9 @@ func (h *Handler) handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Limit upload to 2MB
-	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
-	if err := r.ParseMultipartForm(2 << 20); err != nil {
+	// Limit upload to 5MB
+	r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
+	if err := r.ParseMultipartForm(5 << 20); err != nil {
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 		return
 	}
@@ -3090,6 +3117,88 @@ func (h *Handler) handleSystemInfo(w http.ResponseWriter, r *http.Request) {
 	h.templates["system_info"].ExecuteTemplate(w, "base", data)
 }
 
+// handleLoginBrandingUpload handles background image upload for the login page
+func (h *Handler) handleLoginBrandingUpload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/settings", http.StatusSeeOther)
+		return
+	}
+
+	userID := h.getUserID(r)
+
+	// Limit upload to 5MB
+	r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
+	if err := r.ParseMultipartForm(5 << 20); err != nil {
+		http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("File too large. Maximum size is 5 MB."), http.StatusSeeOther)
+		return
+	}
+
+	file, header, err := r.FormFile("login_bg")
+	if err != nil {
+		http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("No file selected."), http.StatusSeeOther)
+		return
+	}
+	defer file.Close()
+
+	// Validate content type
+	ct := header.Header.Get("Content-Type")
+	if ct != "image/png" && ct != "image/jpeg" && ct != "image/webp" {
+		http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("Invalid file type. Only PNG, JPEG and WebP are allowed."), http.StatusSeeOther)
+		return
+	}
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("Failed to read uploaded file."), http.StatusSeeOther)
+		return
+	}
+
+	bgPath := filepath.Join(h.dataDir, "branding", "login_bg")
+	if err := os.WriteFile(bgPath, data, 0600); err != nil {
+		logging.Warn("Failed to save login background image: %v", err)
+		http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("Failed to save background image."), http.StatusSeeOther)
+		return
+	}
+
+	h.audit.Log(userID, audit.ActionBrandingChanged, "Login background image uploaded", clientIP(r))
+	http.Redirect(w, r, "/admin/settings?flash_type=success&flash_msg="+url.QueryEscape("Background image uploaded successfully."), http.StatusSeeOther)
+}
+
+// handleLoginBrandingRemoveBg removes the login page background image
+func (h *Handler) handleLoginBrandingRemoveBg(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/settings", http.StatusSeeOther)
+		return
+	}
+
+	userID := h.getUserID(r)
+	bgPath := filepath.Join(h.dataDir, "branding", "login_bg")
+	os.Remove(bgPath)
+
+	h.audit.Log(userID, audit.ActionBrandingChanged, "Login background image removed", clientIP(r))
+	http.Redirect(w, r, "/admin/settings?flash_type=success&flash_msg="+url.QueryEscape("Background image removed."), http.StatusSeeOther)
+}
+
+// handleLoginBgServe serves the login page background image (public, no auth required)
+func (h *Handler) handleLoginBgServe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	bgPath := filepath.Join(h.dataDir, "branding", "login_bg")
+	data, err := os.ReadFile(bgPath)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	contentType := http.DetectContentType(data)
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	w.Write(data)
+}
+
 func (h *Handler) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 	userID := h.getUserID(r)
 	user, _ := h.auth.GetUserByID(userID)
@@ -3132,6 +3241,26 @@ func (h *Handler) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 	logging.Info("Admin settings POST: form_type=%s from user_id=%d", formType, userID)
 
 	switch formType {
+	case "branding_settings":
+		batch := make(map[string]string)
+		cardStyle := r.FormValue("login_card_style")
+		if cardStyle == "glass" || cardStyle == "default" {
+			batch["login_card_style"] = cardStyle
+			changed = append(changed, "login_card_style="+cardStyle)
+		}
+		subtitle := r.FormValue("login_subtitle")
+		batch["login_subtitle"] = subtitle
+		if subtitle != "" {
+			changed = append(changed, "login_subtitle="+subtitle)
+		}
+		if err := h.auth.SetSettingsBatch(batch); err != nil {
+			logging.Error("Failed to save branding settings: %v", err)
+			http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("Failed to save branding settings: "+err.Error()), http.StatusSeeOther)
+			return
+		}
+		if len(changed) > 0 {
+			h.audit.Log(userID, audit.ActionBrandingChanged, fmt.Sprintf("Branding settings updated: %s", strings.Join(changed, ", ")), clientIP(r))
+		}
 	case "security_settings":
 		// Collect all settings to save
 		batch := make(map[string]string)

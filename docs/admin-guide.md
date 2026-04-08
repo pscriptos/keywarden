@@ -231,6 +231,12 @@ See [Roles & Permissions](roles.md) for details on which settings are owner-only
 
 Navigate to **Admin Settings** (owner only) to configure:
 
+### Login Page Customization
+
+- **Background Image** — Upload a custom background image for the login page (max 5 MB, JPEG/PNG/WebP). The image is centered and fills the screen without distortion (`background-size: cover`).
+- **Card Style** — Choose between **Default** (solid card) and **Glass** (transparent, blurred backdrop).
+- **Subtitle** — Custom text shown below the application name on the login page. Leave empty for the default subtitle.
+
 ### Application Settings
 
 - **App Name** — Custom application name displayed in the UI

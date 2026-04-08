@@ -1,6 +1,80 @@
 {{define "content"}}
 <div class="row row-deck row-cards">
 
+  <!-- Login Page Customization -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-palette"></i> Login Page Customization</h3>
+      </div>
+      <div class="card-body">
+        <!-- Background Image -->
+        <h4 class="mb-3"><i class="ti ti-photo"></i> Background Image</h4>
+        {{if loginBgImage}}
+        <div class="mb-3">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <img src="{{loginBgImage}}" class="rounded border" style="max-width: 240px; max-height: 140px; object-fit: cover;">
+            </div>
+            <div class="col-auto">
+              <form action="/admin/branding/remove-bg" method="post" onsubmit="return confirm('Remove the login background image?');">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="ti ti-trash"></i> Remove Image
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {{end}}
+        <form action="/admin/branding/upload" method="post" enctype="multipart/form-data">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Upload Background Image</label>
+              <input type="file" name="login_bg" class="form-control" accept="image/png,image/jpeg,image/webp">
+              <small class="form-hint">Max 5 MB. JPEG, PNG or WebP. The image is centered and fills the screen without distortion.</small>
+            </div>
+            <div class="col-auto mb-3 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary">
+                <i class="ti ti-upload"></i> Upload
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <hr class="my-4">
+
+        <!-- Login Theme Settings -->
+        <h4 class="mb-3"><i class="ti ti-brush"></i> Login Theme</h4>
+        <form action="/admin/settings" method="post">
+          <input type="hidden" name="form_type" value="branding_settings">
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Card Style</label>
+              <select name="login_card_style" class="form-select">
+                <option value="default" {{if eq (loginCardStyle) "default"}}selected{{end}}>Default (Solid)</option>
+                <option value="glass" {{if eq (loginCardStyle) "glass"}}selected{{end}}>Glass (Transparent)</option>
+              </select>
+              <small class="form-hint">Visual style of the login form.</small>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-8 mb-3">
+              <label class="form-label">Subtitle</label>
+              <input type="text" name="login_subtitle" class="form-control"
+                     value="{{loginSubtitle}}" placeholder="Centralized SSH Key Management and Deployment">
+              <small class="form-hint">Text shown below the application name on the login page. Leave empty for default.</small>
+            </div>
+          </div>
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-device-floppy"></i> Save Login Theme
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Application Settings -->
   <div class="col-12">
     <div class="card">

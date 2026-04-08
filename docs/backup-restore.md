@@ -31,6 +31,8 @@ Keywarden provides a built-in encrypted backup and restore feature for the entir
 | Audit Log | ✅ |
 | Application Settings | ✅ |
 
+> **Note:** Uploaded branding assets (e.g., custom login background images in `data/branding/`) are stored as files and are **not** included in the `.kwbak` database backup. Use a Docker volume backup to include these files.
+
 > **Note:** SSH private keys are stored with double encryption in backups — first with the application's `KEYWARDEN_ENCRYPTION_KEY`, then with the backup password. Both keys are needed to access the private keys.
 
 ## Importing a Backup

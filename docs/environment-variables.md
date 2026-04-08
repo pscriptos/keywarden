@@ -115,3 +115,5 @@ In addition to environment variables, the following settings are configured thro
 | `lockout_attempts` | `5` | Failed login attempts before lockout (0 = disabled) |
 | `lockout_duration` | `15` | Lockout duration in minutes |
 | `mfa_required` | `false` | Enforce MFA for all users |
+| `login_card_style` | `default` | Login card style: `default` or `glass` |
+| `login_subtitle` | _(empty)_ | Custom subtitle on the login page |

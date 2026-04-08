@@ -134,7 +134,7 @@ If email is configured, you can enable **Login Notifications**. Every time someo
 
 ### Profile Picture
 
-Upload a profile picture (avatar) that is displayed next to your name in the navigation. Supported formats: JPEG, PNG, GIF, WebP. Maximum size is limited by the server's request size limit.
+Upload a profile picture (avatar) that is displayed next to your name in the navigation. Supported formats: JPEG, PNG, GIF, WebP. Maximum file size: 5 MB.
 
 ## Audit Log
 

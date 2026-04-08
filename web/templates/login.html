@@ -29,6 +29,37 @@
       /* Consistent spacing between Tabler icons and adjacent text */
       i.ti { margin-right: 0.25em; }
       .btn-icon > i.ti, .input-icon-addon > i.ti { margin-right: 0; }
+      {{if loginBgImage}}
+      /* Custom background image */
+      body {
+        background-image: url('{{loginBgImage}}') !important;
+        background-size: cover !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+      }
+      .login-heading { text-shadow: 0 2px 8px rgba(0,0,0,0.5); color: #fff !important; }
+      .login-subtitle { text-shadow: 0 1px 4px rgba(0,0,0,0.4); color: rgba(255,255,255,0.85) !important; }
+      .login-footer { text-shadow: 0 1px 4px rgba(0,0,0,0.4); color: rgba(255,255,255,0.7) !important; }
+      {{end}}
+      {{if eq (loginCardStyle) "glass"}}
+      /* Glass card effect */
+      .card {
+        background: rgba(255, 255, 255, 0.15) !important;
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      }
+      [data-bs-theme="dark"] .card {
+        background: rgba(26, 34, 52, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      }
+      .card .form-control { background: rgba(255,255,255,0.55); }
+      [data-bs-theme="dark"] .card .form-control { background: rgba(0,0,0,0.3); }
+      .card .form-label, .card .h2, .card h2 { text-shadow: none; }
+      {{end}}
     </style>
     <!-- Tabler CSS (self-hosted to prevent FOUC) -->
     <link rel="stylesheet" href="/static/css/tabler.min.css">
@@ -38,8 +69,8 @@
     <div class="page page-center">
       <div class="container container-tight py-4">
         <div class="text-center mb-4">
-          <h1><i class="ti ti-key"></i> {{appName}}</h1>
-          <p class="text-secondary">Centralized SSH Key Management and Deployment</p>
+          <h1 class="login-heading"><i class="ti ti-key"></i> {{appName}}</h1>
+          <p class="text-secondary login-subtitle">{{if loginSubtitle}}{{loginSubtitle}}{{else}}Centralized SSH Key Management and Deployment{{end}}</p>
         </div>
         <div class="card card-md">
           <div class="card-body">
@@ -106,7 +137,7 @@
             {{end}}
           </div>
         </div>
-        <div class="text-center text-secondary mt-3">
+        <div class="text-center text-secondary login-footer mt-3">
           &copy; 2026 Keywarden | AGPLv3
         </div>
       </div>

@@ -132,6 +132,7 @@ All persistent data is stored in the `/data` volume:
 | `/data/keys/` | Reserved for future use |
 | `/data/master/` | Reserved for future use |
 | `/data/avatars/` | User profile pictures |
+| `/data/branding/` | Login page branding assets (background images) |
 
 > **Important:** The SQLite database contains encrypted private keys. Back up the `/data` volume regularly. See [Backup & Restore](backup-restore.md).
 
