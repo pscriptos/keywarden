@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 
 ARG VERSION=dev
-RUN CGO_ENABLED=1 GOOS=linux go build -o keywarden -ldflags="-s -w -X main.Version=${VERSION}" ./cmd/keywarden/
+RUN CGO_ENABLED=1 GOOS=linux go build -o keywarden -ldflags="-s -w -X git.techniverse.net/scriptos/keywarden/internal/version.Version=${VERSION}" ./cmd/keywarden/
 
 # Stage 2: Runtime
 FROM alpine:3.21

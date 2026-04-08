@@ -43,7 +43,7 @@ go mod download
 CGO_ENABLED=1 go build -o keywarden ./cmd/keywarden/
 
 # Build with version (optional, enables update checker)
-CGO_ENABLED=1 go build -ldflags="-X 'main.Version=v1.0.0'" -o keywarden ./cmd/keywarden/
+CGO_ENABLED=1 go build -ldflags="-X 'git.techniverse.net/scriptos/keywarden/internal/version.Version=v1.0.0'" -o keywarden ./cmd/keywarden/
 
 # Run
 ./keywarden
