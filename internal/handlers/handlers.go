@@ -1624,7 +1624,18 @@ func (h *Handler) handleDeploy(w http.ResponseWriter, r *http.Request) {
 
 	logging.Info("Deploy successful: key='%s' target=%s@%s:%d", key.Name, server.Username, server.Hostname, server.Port)
 	h.audit.Log(userID, audit.ActionDeploySuccess, fmt.Sprintf("Deployed key '%s' to %s@%s:%d", key.Name, server.Username, server.Hostname, server.Port), clientIP(r))
-	http.Redirect(w, r, "/deploy", http.StatusSeeOther)
+	deployments, _ = h.deploy.GetDeployments(userID)
+	data := &PageData{
+		Title:       "Deploy Keys",
+		Active:      "deploy",
+		User:        user,
+		Keys:        keyList,
+		Servers:     serverList,
+		Groups:      groups,
+		Deployments: deployments,
+		Flash:       &Flash{Type: "success", Message: fmt.Sprintf("Key '%s' successfully deployed to %s@%s:%d.", key.Name, server.Username, server.Hostname, server.Port)},
+	}
+	h.templates["deploy"].ExecuteTemplate(w, "base", data)
 }
 
 func (h *Handler) handleDeployGroup(w http.ResponseWriter, r *http.Request) {

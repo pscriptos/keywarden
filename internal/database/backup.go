@@ -48,7 +48,7 @@ func (d *DB) ExportAll() (*BackupData, error) {
 		{`SELECT id, user_id, name, hostname, port, username, description, created_at, updated_at FROM servers ORDER BY id`, &backup.Servers},
 		{`SELECT id, user_id, name, description, created_at, updated_at FROM server_groups ORDER BY id`, &backup.ServerGroups},
 		{`SELECT id, group_id, server_id FROM server_group_members ORDER BY id`, &backup.GroupMembers},
-		{`SELECT id, ssh_key_id, server_id, deployed_at, status, message FROM key_deployments ORDER BY id`, &backup.KeyDeployments},
+		{`SELECT id, ssh_key_id, server_id, deployed_at, status, message, key_name FROM key_deployments ORDER BY id`, &backup.KeyDeployments},
 		{`SELECT id, user_id, action, details, ip_address, created_at FROM audit_log ORDER BY id`, &backup.AuditLog},
 		{`SELECT key, value, updated_at FROM settings ORDER BY key`, &backup.Settings},
 		{`SELECT id, user_id, ssh_key_id, server_id, group_id, system_user, desired_state, sudo, create_user, initial_password, status, last_sync_at, created_at, updated_at FROM access_assignments ORDER BY id`, &backup.AccessAssign},
@@ -115,7 +115,7 @@ func (d *DB) ImportAll(backup *BackupData) error {
 		{"servers", []string{"id", "user_id", "name", "hostname", "port", "username", "description", "created_at", "updated_at"}, backup.Servers},
 		{"server_groups", []string{"id", "user_id", "name", "description", "created_at", "updated_at"}, backup.ServerGroups},
 		{"server_group_members", []string{"id", "group_id", "server_id"}, backup.GroupMembers},
-		{"key_deployments", []string{"id", "ssh_key_id", "server_id", "deployed_at", "status", "message"}, backup.KeyDeployments},
+		{"key_deployments", []string{"id", "ssh_key_id", "server_id", "deployed_at", "status", "message", "key_name"}, backup.KeyDeployments},
 		{"audit_log", []string{"id", "user_id", "action", "details", "ip_address", "created_at"}, backup.AuditLog},
 		{"settings", []string{"key", "value", "updated_at"}, backup.Settings},
 		{"access_assignments", []string{"id", "user_id", "ssh_key_id", "server_id", "group_id", "system_user", "desired_state", "sudo", "create_user", "initial_password", "status", "last_sync_at", "created_at", "updated_at"}, backup.AccessAssign},
@@ -145,7 +145,12 @@ func (d *DB) ImportAll(backup *BackupData) error {
 		for _, row := range imp.data {
 			args := make([]interface{}, len(imp.columns))
 			for i, col := range imp.columns {
-				args[i] = row[col]
+				v := row[col]
+				// For columns with NOT NULL DEFAULT '', treat nil as empty string
+				if v == nil && col == "key_name" {
+					v = ""
+				}
+				args[i] = v
 			}
 			if _, err := stmt.Exec(args...); err != nil {
 				stmt.Close()

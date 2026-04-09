@@ -77,7 +77,9 @@ The key is deployed to all servers in the group sequentially.
 
 ### Deployment History
 
-The deploy page shows the last 50 deployment results with status (success/failed) and error messages.
+The deploy page shows the last 50 deployment results with status (success/failed) and error messages. Master key deployments are included in the history as **[MASTER] System Master Key**.
+
+After each deployment (single host or group), a flash message is displayed at the top of the page indicating success or failure.
 
 ## Access Assignments
 

@@ -5,6 +5,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
@@ -263,6 +264,41 @@ func (d *DB) migrate() error {
 				}
 			}
 			d.Exec(`INSERT INTO _migrations (name) VALUES ('backfill_initial_owner_id')`)
+		}
+	}
+
+	// Migration: recreate key_deployments with nullable ssh_key_id and key_name column
+	// This is needed so the system master key (which has no ssh_keys row) can be logged.
+	{
+		var migCount int
+		d.QueryRow(`SELECT COUNT(*) FROM _migrations WHERE name = 'key_deployments_nullable_keyid'`).Scan(&migCount)
+		if migCount == 0 {
+			ctx := context.Background()
+			conn, err := d.DB.Conn(ctx)
+			if err == nil {
+				conn.ExecContext(ctx, `PRAGMA foreign_keys = OFF`)
+				conn.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS key_deployments_new (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					ssh_key_id INTEGER,
+					server_id INTEGER NOT NULL,
+					deployed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+					status TEXT NOT NULL DEFAULT 'pending',
+					message TEXT,
+					key_name TEXT NOT NULL DEFAULT '',
+					FOREIGN KEY (ssh_key_id) REFERENCES ssh_keys(id) ON DELETE CASCADE,
+					FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+				)`)
+				conn.ExecContext(ctx, `INSERT INTO key_deployments_new (id, ssh_key_id, server_id, deployed_at, status, message, key_name)
+					SELECT kd.id, kd.ssh_key_id, kd.server_id, kd.deployed_at, kd.status, kd.message,
+						COALESCE(sk.name, '')
+					FROM key_deployments kd
+					LEFT JOIN ssh_keys sk ON kd.ssh_key_id = sk.id`)
+				conn.ExecContext(ctx, `DROP TABLE key_deployments`)
+				conn.ExecContext(ctx, `ALTER TABLE key_deployments_new RENAME TO key_deployments`)
+				conn.ExecContext(ctx, `PRAGMA foreign_keys = ON`)
+				conn.Close()
+			}
+			d.Exec(`INSERT INTO _migrations (name) VALUES ('key_deployments_nullable_keyid')`)
 		}
 	}
 
