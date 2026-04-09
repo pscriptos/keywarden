@@ -60,12 +60,12 @@
               </td>
               <td class="text-secondary">
                 {{if .LastLoginAt}}
-                {{.LastLoginAt.Format "2006-01-02 15:04"}}
+                {{formatTime .LastLoginAt}}
                 {{else}}
                 <span class="text-muted">Never</span>
                 {{end}}
               </td>
-              <td class="text-secondary">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              <td class="text-secondary">{{formatTime .CreatedAt}}</td>
               <td>
                 <div class="btn-list flex-nowrap">
                   {{if .LockedUntil}}

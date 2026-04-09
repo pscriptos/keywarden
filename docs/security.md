@@ -141,6 +141,12 @@ Login endpoints (`POST /login`, `POST /login/mfa`) are rate-limited per IP addre
 
 A background goroutine cleans up expired rate limit entries every 5 minutes.
 
+## Gzip Compression
+
+HTTP responses are compressed using gzip for clients that send `Accept-Encoding: gzip`. Only compressible content types are compressed (HTML, CSS, JS, JSON, SVG). Already-compressed formats (woff2, images) are passed through unchanged.
+
+The middleware uses a `sync.Pool` of gzip writers for efficient memory reuse.
+
 ## Request Size Limiting
 
 Request bodies are limited to prevent denial-of-service via large uploads.
@@ -180,7 +186,7 @@ WARN: KEYWARDEN_TRUSTED_PROXIES not set – proxy headers (X-Forwarded-For) are 
 - Cookie name: `keywarden_session`
 - Cookie flags:
   - `HttpOnly` — Not accessible via JavaScript
-  - `SameSite=Lax` — Prevents CSRF from external sites
+  - `SameSite=Strict` — Prevents CSRF from external sites
   - `Secure` — Only over HTTPS (when enabled)
   - `MaxAge=86400` — 24 hours
 - Sessions stored in-memory (not persisted across restarts)

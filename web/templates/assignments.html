@@ -123,7 +123,7 @@
                 <span class="badge bg-yellow-lt"><i class="ti ti-clock"></i> Pending</span>
                 {{end}}
               </td>
-              <td class="text-secondary">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              <td class="text-secondary">{{formatTime .CreatedAt}}</td>
               {{if or (eq $.User.Role "admin") (eq $.User.Role "owner")}}
               <td>
                 <div class="btn-list flex-nowrap">

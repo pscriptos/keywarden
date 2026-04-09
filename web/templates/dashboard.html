@@ -202,7 +202,7 @@
           <tbody>
             {{range .RecentAudit}}
             <tr>
-              <td class="text-nowrap">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              <td class="text-nowrap">{{formatTime .CreatedAt}}</td>
               <td>{{.Username}}</td>
               <td><span class="badge bg-secondary-lt">{{.Action}}</span></td>
               <td class="text-truncate" style="max-width: 300px;">{{.Details}}</td>

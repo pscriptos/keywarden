@@ -5,6 +5,7 @@
 package handlers
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha1"
@@ -15,6 +16,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"io/fs"
 	"math"
@@ -27,6 +31,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	_ "golang.org/x/image/webp"
 
 	"git.techniverse.net/scriptos/keywarden/internal/audit"
 	"git.techniverse.net/scriptos/keywarden/internal/auth"
@@ -194,6 +200,7 @@ type SystemInfo struct {
 	Runtime      string // e.g. "Docker" or "Native"
 	Hostname     string
 	Uptime       string
+	Timezone     string
 }
 
 // AdminUserInfo holds user info for the admin settings page
@@ -266,6 +273,12 @@ func New(authSvc *auth.Service, keysSvc *keys.Service, serversSvc *servers.Servi
 		logging.Warn("Failed to create avatars directory %s: %v", avatarsDir, err)
 	}
 
+	// Ensure branding directory exists
+	brandingDir := filepath.Join(dataDir, "branding")
+	if err := os.MkdirAll(brandingDir, 0700); err != nil {
+		logging.Warn("Failed to create branding directory %s: %v", brandingDir, err)
+	}
+
 	h := &Handler{
 		auth:          authSvc,
 		keys:          keysSvc,
@@ -316,6 +329,59 @@ func (h *Handler) loadTemplates(templateFS embed.FS) {
 		},
 		"releaseURL": func() string {
 			return h.updater.ReleaseURL()
+		},
+		"releasesPageURL": func() string {
+			return updater.ReleasesPageURL
+		},
+		"loginBgImage": func() string {
+			bgPath := filepath.Join(h.dataDir, "branding", "login_bg")
+			if _, err := os.Stat(bgPath); err == nil {
+				return "/branding/login-bg"
+			}
+			return ""
+		},
+		"loginTextColor": func() string {
+			c, _ := h.auth.GetSetting("login_text_color")
+			if c == "" {
+				return "light"
+			}
+			return c
+		},
+		// formatTime converts a time.Time to the app timezone and formats as "2006-01-02 15:04"
+		"formatTime": func(v interface{}) string {
+			switch t := v.(type) {
+			case time.Time:
+				return t.Local().Format("2006-01-02 15:04")
+			case *time.Time:
+				if t != nil {
+					return t.Local().Format("2006-01-02 15:04")
+				}
+			}
+			return ""
+		},
+		// formatDateTime converts a time.Time to the app timezone and formats as "2006-01-02 15:04:05"
+		"formatDateTime": func(v interface{}) string {
+			switch t := v.(type) {
+			case time.Time:
+				return t.Local().Format("2006-01-02 15:04:05")
+			case *time.Time:
+				if t != nil {
+					return t.Local().Format("2006-01-02 15:04:05")
+				}
+			}
+			return ""
+		},
+		// formatDateTimeLocal converts a time.Time to the app timezone and formats for HTML datetime-local inputs
+		"formatDateTimeLocal": func(v interface{}) string {
+			switch t := v.(type) {
+			case time.Time:
+				return t.Local().Format("2006-01-02T15:04")
+			case *time.Time:
+				if t != nil {
+					return t.Local().Format("2006-01-02T15:04")
+				}
+			}
+			return ""
 		},
 	}
 
@@ -399,6 +465,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/static/", h.handleStatic)
 
 	// Public routes
+	mux.HandleFunc("/branding/login-bg", h.handleLoginBgServe)
 	mux.HandleFunc("/login", h.handleLogin)
 	mux.HandleFunc("/login/mfa", h.handleLoginMFA)
 	mux.HandleFunc("/logout", h.handleLogout)
@@ -454,6 +521,8 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 	// Owner-only routes
 	mux.HandleFunc("/admin/settings", h.requireOwner(h.handleAdminSettings))
+	mux.HandleFunc("/admin/branding/upload", h.requireOwner(h.handleLoginBrandingUpload))
+	mux.HandleFunc("/admin/branding/remove-bg", h.requireOwner(h.handleLoginBrandingRemoveBg))
 	mux.HandleFunc("/admin/masterkey/regenerate", h.requireOwner(h.handleMasterKeyRegenerate))
 	mux.HandleFunc("/admin/backup/export", h.requireOwner(h.handleBackupExport))
 	mux.HandleFunc("/admin/backup/import", h.requireOwner(h.handleBackupImport))
@@ -567,11 +636,13 @@ func (h *Handler) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 			h.mu.Unlock()
 			logging.Info("Session expired for user ID %d due to inactivity (%v timeout)", sess.UserID, timeout)
 			http.SetCookie(w, &http.Cookie{
-				Name:   "keywarden_session",
-				Value:  "",
-				Path:   "/",
-				Secure: h.secureCookies,
-				MaxAge: -1,
+				Name:     "keywarden_session",
+				Value:    "",
+				Path:     "/",
+				HttpOnly: true,
+				Secure:   h.secureCookies,
+				SameSite: http.SameSiteStrictMode,
+				MaxAge:   -1,
 			})
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
@@ -856,11 +927,13 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:   "keywarden_session",
-		Value:  "",
-		Path:   "/",
-		Secure: h.secureCookies,
-		MaxAge: -1,
+		Name:     "keywarden_session",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   h.secureCookies,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   -1,
 	})
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -1430,6 +1503,36 @@ func (h *Handler) handleServerTestAuth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// masterKeyForDeploy returns the system master key as a virtual SSHKey entry for deployment.
+// Returns nil if the master key is not available.
+func (h *Handler) masterKeyForDeploy() *models.SSHKey {
+	pub, err := h.keys.GetSystemMasterKeyPublic()
+	if err != nil || pub == "" {
+		return nil
+	}
+	fp, _ := h.keys.GetSystemMasterKeyFingerprint()
+	return &models.SSHKey{
+		ID:          -1,
+		UserID:      0,
+		Name:        "[MASTER] System Master Key",
+		KeyType:     "ed25519",
+		PublicKey:   pub,
+		Fingerprint: fp,
+	}
+}
+
+// prependMasterKey adds the system master key to the key list if the user is an owner.
+func (h *Handler) prependMasterKey(keyList []models.SSHKey, role string) []models.SSHKey {
+	if !isOwner(role) {
+		return keyList
+	}
+	mk := h.masterKeyForDeploy()
+	if mk == nil {
+		return keyList
+	}
+	return append([]models.SSHKey{*mk}, keyList...)
+}
+
 func (h *Handler) handleDeploy(w http.ResponseWriter, r *http.Request) {
 	userID := h.getUserID(r)
 	user, _ := h.auth.GetUserByID(userID)
@@ -1437,6 +1540,9 @@ func (h *Handler) handleDeploy(w http.ResponseWriter, r *http.Request) {
 	serverList, _ := h.servers.GetAllServers()
 	groups, _ := h.servers.GetAllGroups()
 	deployments, _ := h.deploy.GetDeployments(userID)
+
+	// Owner can deploy the system master key
+	keyList = h.prependMasterKey(keyList, user.Role)
 
 	if r.Method == http.MethodGet {
 		data := &PageData{
@@ -1457,13 +1563,25 @@ func (h *Handler) handleDeploy(w http.ResponseWriter, r *http.Request) {
 	serverID, _ := strconv.ParseInt(r.FormValue("server_id"), 10, 64)
 	authMethod := r.FormValue("auth_method")
 
-	key, err := h.keys.GetKeyByID(keyID, userID)
-	if err != nil {
-		// Try global access for admin/owner deploying other users' keys
-		key, err = h.keys.GetKeyByIDGlobal(keyID)
-		if err != nil {
+	var key *models.SSHKey
+	var err error
+
+	if keyID == -1 && isOwner(user.Role) {
+		// Owner deploying the system master key
+		key = h.masterKeyForDeploy()
+		if key == nil {
 			http.Redirect(w, r, "/deploy", http.StatusSeeOther)
 			return
+		}
+	} else {
+		key, err = h.keys.GetKeyByID(keyID, userID)
+		if err != nil {
+			// Try global access for admin/owner deploying other users' keys
+			key, err = h.keys.GetKeyByIDGlobal(keyID)
+			if err != nil {
+				http.Redirect(w, r, "/deploy", http.StatusSeeOther)
+				return
+			}
 		}
 	}
 
@@ -1508,7 +1626,18 @@ func (h *Handler) handleDeploy(w http.ResponseWriter, r *http.Request) {
 
 	logging.Info("Deploy successful: key='%s' target=%s@%s:%d", key.Name, server.Username, server.Hostname, server.Port)
 	h.audit.Log(userID, audit.ActionDeploySuccess, fmt.Sprintf("Deployed key '%s' to %s@%s:%d", key.Name, server.Username, server.Hostname, server.Port), clientIP(r))
-	http.Redirect(w, r, "/deploy", http.StatusSeeOther)
+	deployments, _ = h.deploy.GetDeployments(userID)
+	data := &PageData{
+		Title:       "Deploy Keys",
+		Active:      "deploy",
+		User:        user,
+		Keys:        keyList,
+		Servers:     serverList,
+		Groups:      groups,
+		Deployments: deployments,
+		Flash:       &Flash{Type: "success", Message: fmt.Sprintf("Key '%s' successfully deployed to %s@%s:%d.", key.Name, server.Username, server.Hostname, server.Port)},
+	}
+	h.templates["deploy"].ExecuteTemplate(w, "base", data)
 }
 
 func (h *Handler) handleDeployGroup(w http.ResponseWriter, r *http.Request) {
@@ -1523,13 +1652,25 @@ func (h *Handler) handleDeployGroup(w http.ResponseWriter, r *http.Request) {
 	groupID, _ := strconv.ParseInt(r.FormValue("group_id"), 10, 64)
 	authMethod := r.FormValue("auth_method")
 
-	key, err := h.keys.GetKeyByID(keyID, userID)
-	if err != nil {
-		// Try global access for admin/owner deploying other users' keys
-		key, err = h.keys.GetKeyByIDGlobal(keyID)
-		if err != nil {
+	var key *models.SSHKey
+	var keyErr error
+
+	if keyID == -1 && isOwner(user.Role) {
+		// Owner deploying the system master key
+		key = h.masterKeyForDeploy()
+		if key == nil {
 			http.Redirect(w, r, "/deploy", http.StatusSeeOther)
 			return
+		}
+	} else {
+		key, keyErr = h.keys.GetKeyByID(keyID, userID)
+		if keyErr != nil {
+			// Try global access for admin/owner deploying other users' keys
+			key, keyErr = h.keys.GetKeyByIDGlobal(keyID)
+			if keyErr != nil {
+				http.Redirect(w, r, "/deploy", http.StatusSeeOther)
+				return
+			}
 		}
 	}
 
@@ -1542,6 +1683,7 @@ func (h *Handler) handleDeployGroup(w http.ResponseWriter, r *http.Request) {
 	members, err := h.servers.GetGroupMembersGlobal(groupID)
 	if err != nil || len(members) == 0 {
 		keyList, _ := h.keys.GetAllKeys()
+		keyList = h.prependMasterKey(keyList, user.Role)
 		serverList, _ := h.servers.GetAllServers()
 		groups, _ := h.servers.GetAllGroups()
 		deployments, _ := h.deploy.GetDeployments(userID)
@@ -1597,6 +1739,7 @@ func (h *Handler) handleDeployGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyList, _ := h.keys.GetAllKeys()
+	keyList = h.prependMasterKey(keyList, user.Role)
 	serverList, _ := h.servers.GetAllServers()
 	groups, _ := h.servers.GetAllGroups()
 	deployments, _ := h.deploy.GetDeployments(userID)
@@ -2480,9 +2623,9 @@ func (h *Handler) handleAvatarUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Limit upload to 2MB
-	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
-	if err := r.ParseMultipartForm(2 << 20); err != nil {
+	// Limit upload to 5MB
+	r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
+	if err := r.ParseMultipartForm(5 << 20); err != nil {
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 		return
 	}
@@ -3016,6 +3159,7 @@ func (h *Handler) handleSystemInfo(w http.ResponseWriter, r *http.Request) {
 		Runtime:      runtimeEnv,
 		Hostname:     hostname,
 		Uptime:       uptimeStr,
+		Timezone:     time.Local.String(),
 	}
 
 	data := &PageData{
@@ -3025,6 +3169,146 @@ func (h *Handler) handleSystemInfo(w http.ResponseWriter, r *http.Request) {
 		SystemInfo: sysInfo,
 	}
 	h.templates["system_info"].ExecuteTemplate(w, "base", data)
+}
+
+// handleLoginBrandingUpload handles background image upload for the login page
+func (h *Handler) handleLoginBrandingUpload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/settings", http.StatusSeeOther)
+		return
+	}
+
+	userID := h.getUserID(r)
+
+	// Limit upload to 5MB
+	r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
+	if err := r.ParseMultipartForm(5 << 20); err != nil {
+		http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("File too large. Maximum size is 5 MB."), http.StatusSeeOther)
+		return
+	}
+
+	file, header, err := r.FormFile("login_bg")
+	if err != nil {
+		http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("No file selected."), http.StatusSeeOther)
+		return
+	}
+	defer file.Close()
+
+	// Validate content type
+	ct := header.Header.Get("Content-Type")
+	if ct != "image/png" && ct != "image/jpeg" && ct != "image/webp" {
+		http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("Invalid file type. Only PNG, JPEG and WebP are allowed."), http.StatusSeeOther)
+		return
+	}
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("Failed to read uploaded file."), http.StatusSeeOther)
+		return
+	}
+
+	bgPath := filepath.Join(h.dataDir, "branding", "login_bg")
+	if err := os.WriteFile(bgPath, data, 0600); err != nil {
+		logging.Warn("Failed to save login background image: %v", err)
+		http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("Failed to save background image."), http.StatusSeeOther)
+		return
+	}
+
+	// Auto-detect brightness and set text color accordingly
+	textColor := analyzeImageBrightness(data)
+	if err := h.auth.SetSetting("login_text_color", textColor); err != nil {
+		logging.Warn("Failed to save auto-detected text color: %v", err)
+	}
+	logging.Info("Login background uploaded: auto-detected text color = %s", textColor)
+
+	h.audit.Log(userID, audit.ActionBrandingChanged, fmt.Sprintf("Login background image uploaded (auto text color: %s)", textColor), clientIP(r))
+	http.Redirect(w, r, "/admin/settings?flash_type=success&flash_msg="+url.QueryEscape("Background image uploaded successfully."), http.StatusSeeOther)
+}
+
+// handleLoginBrandingRemoveBg removes the login page background image
+func (h *Handler) handleLoginBrandingRemoveBg(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/settings", http.StatusSeeOther)
+		return
+	}
+
+	userID := h.getUserID(r)
+	bgPath := filepath.Join(h.dataDir, "branding", "login_bg")
+	os.Remove(bgPath)
+	// Reset auto-detected text color
+	_ = h.auth.SetSetting("login_text_color", "light")
+
+	h.audit.Log(userID, audit.ActionBrandingChanged, "Login background image removed", clientIP(r))
+	http.Redirect(w, r, "/admin/settings?flash_type=success&flash_msg="+url.QueryEscape("Background image removed."), http.StatusSeeOther)
+}
+
+// handleLoginBgServe serves the login page background image (public, no auth required)
+func (h *Handler) handleLoginBgServe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	bgPath := filepath.Join(h.dataDir, "branding", "login_bg")
+	data, err := os.ReadFile(bgPath)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	contentType := http.DetectContentType(data)
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	w.Write(data)
+}
+
+// analyzeImageBrightness decodes an image and computes the average perceived
+// brightness using the ITU-R BT.709 luminance formula. It samples every Nth
+// pixel for performance. Returns "light" if the image is dark (bright text
+// needed) or "dark" if the image is bright (dark text needed).
+func analyzeImageBrightness(data []byte) string {
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		// Cannot decode → assume dark image, use light text
+		return "light"
+	}
+
+	bounds := img.Bounds()
+	width := bounds.Max.X - bounds.Min.X
+	height := bounds.Max.Y - bounds.Min.Y
+	totalPixels := width * height
+
+	// Sample step: aim for ~10 000 pixels max for performance
+	step := 1
+	if totalPixels > 10000 {
+		step = int(math.Sqrt(float64(totalPixels) / 10000))
+		if step < 1 {
+			step = 1
+		}
+	}
+
+	var sum float64
+	var count int
+	for y := bounds.Min.Y; y < bounds.Max.Y; y += step {
+		for x := bounds.Min.X; x < bounds.Max.X; x += step {
+			r, g, b, _ := img.At(x, y).RGBA()
+			// ITU-R BT.709 perceived luminance (values are 0–65535)
+			lum := 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)
+			sum += lum
+			count++
+		}
+	}
+
+	if count == 0 {
+		return "light"
+	}
+
+	avg := sum / float64(count)
+	// 65535 / 2 = 32767.5 → threshold at ~40% brightness
+	if avg < 26214 {
+		return "light" // dark image → use light/white text
+	}
+	return "dark" // bright image → use dark text
 }
 
 func (h *Handler) handleAdminSettings(w http.ResponseWriter, r *http.Request) {

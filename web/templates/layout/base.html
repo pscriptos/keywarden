@@ -8,7 +8,7 @@
     <title>{{.Title}} - {{appName}}</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <!-- Preload icon font to prevent re-decode lag on tab restore -->
-    <link rel="preload" href="/static/css/fonts/tabler-icons.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/static/css/fonts/tabler-icons.woff2?v3.6.0" as="font" type="font/woff2" crossorigin>
     <!-- Resolve theme BEFORE loading CSS to prevent FOUC (flash of unstyled content) -->
     <script>
       (function() {
@@ -63,15 +63,17 @@
         overflow: hidden;
       }
 
-      /* ── Full-width top header ── */
+      /* ── Full-width top header (glass) ── */
       header.navbar.keywarden-top-header {
-        background: #1D2B38 !important;
+        background: rgba(29, 43, 56, 0.82) !important;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
         border-bottom: 1px solid rgba(255,255,255,0.06);
         flex-shrink: 0;
         z-index: 1030;
       }
       [data-bs-theme="light"] header.navbar.keywarden-top-header {
-        background: #1D2B38 !important;
+        background: rgba(29, 43, 56, 0.82) !important;
         border-bottom: 1px solid rgba(0,0,0,0.08);
       }
       header.navbar.keywarden-top-header .nav-link { color: #c8d6e5 !important; }
@@ -119,17 +121,19 @@
         border-radius: 4px;
       }
 
-      /* ── Sidebar (vertical, below header) ── */
+      /* ── Sidebar (vertical, below header – glass) ── */
       .navbar-vertical {
-        background: #1D2B38 !important;
+        background: rgba(29, 43, 56, 0.82) !important;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
         flex-shrink: 0;
         overflow: hidden;
         align-self: stretch;
         display: flex;
         flex-direction: column;
       }
-      [data-bs-theme="dark"] .navbar-vertical { background: #0a1120 !important; }
-      [data-bs-theme="dark"] header.navbar.keywarden-top-header { background: #0a1120 !important; border-bottom-color: rgba(255,255,255,0.04); }
+      [data-bs-theme="dark"] .navbar-vertical { background: rgba(10, 17, 32, 0.82) !important; }
+      [data-bs-theme="dark"] header.navbar.keywarden-top-header { background: rgba(10, 17, 32, 0.82) !important; border-bottom-color: rgba(255,255,255,0.04); }
       .navbar-vertical > .container-fluid {
         flex: 1;
         display: flex;
@@ -147,7 +151,7 @@
         display: flex;
         flex-direction: column;
       }
-      [data-bs-theme="light"] .navbar-vertical { background: #1D2B38 !important; }
+      [data-bs-theme="light"] .navbar-vertical { background: rgba(29, 43, 56, 0.82) !important; }
 
       /* ── Page content area ── */
       .page-wrapper {
@@ -156,11 +160,29 @@
         overflow-y: auto;
         margin-left: 0 !important;
       }
-      [data-bs-theme="dark"] .page-wrapper { background: #0F1829; }
-      [data-bs-theme="dark"] .page-body { background: #0F1829; }
+      [data-bs-theme="dark"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 15% 10%, rgba(6, 182, 212, 0.07) 0%, transparent 50%),
+          radial-gradient(ellipse at 85% 60%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 90%, rgba(168, 85, 247, 0.04) 0%, transparent 50%),
+          #0F1829;
+      }
+      [data-bs-theme="dark"] .page-body {
+        background: transparent;
+      }
+      [data-bs-theme="light"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 15% 10%, rgba(6, 182, 212, 0.10) 0%, transparent 50%),
+          radial-gradient(ellipse at 85% 60%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 90%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+          #f1f5f9;
+      }
+      [data-bs-theme="light"] .page-body {
+        background: transparent;
+      }
       html[data-bs-theme="dark"],
       html[data-bs-theme="dark"] body { background-color: #0F1829 !important; }
-      .page-body { content-visibility: auto; contain-intrinsic-size: auto 500px; }
+      /* content-visibility removed – causes Firefox to freeze/re-layout on tab hover */
 
       /* ── Narrower dashboard stat cards ── */
       .stat-card-narrow { max-width: 220px; }
@@ -424,12 +446,22 @@
       html[data-theme-pair="ocean"][data-bs-theme="dark"],
       html[data-theme-pair="ocean"][data-bs-theme="dark"] body { background-color: #0c1a2a !important; }
       html[data-theme-pair="ocean"][data-bs-theme="light"] .navbar-vertical,
-      html[data-theme-pair="ocean"][data-bs-theme="light"] header.navbar.keywarden-top-header { background: #155e75 !important; }
+      html[data-theme-pair="ocean"][data-bs-theme="light"] header.navbar.keywarden-top-header { background: rgba(21, 94, 117, 0.82) !important; }
       html[data-theme-pair="ocean"][data-bs-theme="dark"] .navbar-vertical,
-      html[data-theme-pair="ocean"][data-bs-theme="dark"] header.navbar.keywarden-top-header { background: #071220 !important; }
-      html[data-theme-pair="ocean"][data-bs-theme="light"] .page-wrapper { background: #ecfeff; }
-      html[data-theme-pair="ocean"][data-bs-theme="dark"] .page-wrapper,
-      html[data-theme-pair="ocean"][data-bs-theme="dark"] .page-body { background: #0c1a2a; }
+      html[data-theme-pair="ocean"][data-bs-theme="dark"] header.navbar.keywarden-top-header { background: rgba(7, 18, 32, 0.82) !important; }
+      html[data-theme-pair="ocean"][data-bs-theme="light"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 15% 10%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+          radial-gradient(ellipse at 85% 60%, rgba(14, 116, 144, 0.08) 0%, transparent 50%),
+          #ecfeff;
+      }
+      html[data-theme-pair="ocean"][data-bs-theme="dark"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 15% 10%, rgba(6, 182, 212, 0.09) 0%, transparent 50%),
+          radial-gradient(ellipse at 85% 60%, rgba(14, 116, 144, 0.06) 0%, transparent 50%),
+          #0c1a2a;
+      }
+      html[data-theme-pair="ocean"] .page-body { background: transparent; }
       html[data-theme-pair="ocean"] .keywarden-header-brand .keywarden-brand i.ti { color: #22d3ee; }
       html[data-theme-pair="ocean"] .nav-category { color: rgba(160, 220, 230, 0.6); }
       html[data-theme-pair="ocean"][data-bs-theme="light"] ::selection { background: #a5f3fc; color: #155e75; }
@@ -455,12 +487,22 @@
       html[data-theme-pair="forest"][data-bs-theme="dark"],
       html[data-theme-pair="forest"][data-bs-theme="dark"] body { background-color: #0a1a10 !important; }
       html[data-theme-pair="forest"][data-bs-theme="light"] .navbar-vertical,
-      html[data-theme-pair="forest"][data-bs-theme="light"] header.navbar.keywarden-top-header { background: #14532d !important; }
+      html[data-theme-pair="forest"][data-bs-theme="light"] header.navbar.keywarden-top-header { background: rgba(20, 83, 45, 0.82) !important; }
       html[data-theme-pair="forest"][data-bs-theme="dark"] .navbar-vertical,
-      html[data-theme-pair="forest"][data-bs-theme="dark"] header.navbar.keywarden-top-header { background: #061209 !important; }
-      html[data-theme-pair="forest"][data-bs-theme="light"] .page-wrapper { background: #f0fdf4; }
-      html[data-theme-pair="forest"][data-bs-theme="dark"] .page-wrapper,
-      html[data-theme-pair="forest"][data-bs-theme="dark"] .page-body { background: #0a1a10; }
+      html[data-theme-pair="forest"][data-bs-theme="dark"] header.navbar.keywarden-top-header { background: rgba(6, 18, 9, 0.82) !important; }
+      html[data-theme-pair="forest"][data-bs-theme="light"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 20% 15%, rgba(74, 222, 128, 0.12) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 70%, rgba(22, 163, 74, 0.08) 0%, transparent 50%),
+          #f0fdf4;
+      }
+      html[data-theme-pair="forest"][data-bs-theme="dark"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 20% 15%, rgba(74, 222, 128, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 70%, rgba(22, 163, 74, 0.05) 0%, transparent 50%),
+          #0a1a10;
+      }
+      html[data-theme-pair="forest"] .page-body { background: transparent; }
       html[data-theme-pair="forest"] .keywarden-header-brand .keywarden-brand i.ti { color: #4ade80; }
       html[data-theme-pair="forest"] .nav-category { color: rgba(160, 210, 170, 0.6); }
       html[data-theme-pair="forest"][data-bs-theme="light"] ::selection { background: #bbf7d0; color: #14532d; }
@@ -486,12 +528,22 @@
       html[data-theme-pair="sunset"][data-bs-theme="dark"],
       html[data-theme-pair="sunset"][data-bs-theme="dark"] body { background-color: #1a1408 !important; }
       html[data-theme-pair="sunset"][data-bs-theme="light"] .navbar-vertical,
-      html[data-theme-pair="sunset"][data-bs-theme="light"] header.navbar.keywarden-top-header { background: #78350f !important; }
+      html[data-theme-pair="sunset"][data-bs-theme="light"] header.navbar.keywarden-top-header { background: rgba(120, 53, 15, 0.82) !important; }
       html[data-theme-pair="sunset"][data-bs-theme="dark"] .navbar-vertical,
-      html[data-theme-pair="sunset"][data-bs-theme="dark"] header.navbar.keywarden-top-header { background: #110d04 !important; }
-      html[data-theme-pair="sunset"][data-bs-theme="light"] .page-wrapper { background: #fffbeb; }
-      html[data-theme-pair="sunset"][data-bs-theme="dark"] .page-wrapper,
-      html[data-theme-pair="sunset"][data-bs-theme="dark"] .page-body { background: #1a1408; }
+      html[data-theme-pair="sunset"][data-bs-theme="dark"] header.navbar.keywarden-top-header { background: rgba(17, 13, 4, 0.82) !important; }
+      html[data-theme-pair="sunset"][data-bs-theme="light"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 15% 20%, rgba(245, 158, 11, 0.12) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 60%, rgba(217, 119, 6, 0.08) 0%, transparent 50%),
+          #fffbeb;
+      }
+      html[data-theme-pair="sunset"][data-bs-theme="dark"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 15% 20%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 60%, rgba(217, 119, 6, 0.05) 0%, transparent 50%),
+          #1a1408;
+      }
+      html[data-theme-pair="sunset"] .page-body { background: transparent; }
       html[data-theme-pair="sunset"] .keywarden-header-brand .keywarden-brand i.ti { color: #fbbf24; }
       html[data-theme-pair="sunset"] .nav-category { color: rgba(220, 190, 150, 0.6); }
       html[data-theme-pair="sunset"][data-bs-theme="light"] ::selection { background: #fde68a; color: #78350f; }
@@ -517,12 +569,22 @@
       html[data-theme-pair="rose"][data-bs-theme="dark"],
       html[data-theme-pair="rose"][data-bs-theme="dark"] body { background-color: #1a0a14 !important; }
       html[data-theme-pair="rose"][data-bs-theme="light"] .navbar-vertical,
-      html[data-theme-pair="rose"][data-bs-theme="light"] header.navbar.keywarden-top-header { background: #831843 !important; }
+      html[data-theme-pair="rose"][data-bs-theme="light"] header.navbar.keywarden-top-header { background: rgba(131, 24, 67, 0.82) !important; }
       html[data-theme-pair="rose"][data-bs-theme="dark"] .navbar-vertical,
-      html[data-theme-pair="rose"][data-bs-theme="dark"] header.navbar.keywarden-top-header { background: #12060e !important; }
-      html[data-theme-pair="rose"][data-bs-theme="light"] .page-wrapper { background: #fdf2f8; }
-      html[data-theme-pair="rose"][data-bs-theme="dark"] .page-wrapper,
-      html[data-theme-pair="rose"][data-bs-theme="dark"] .page-body { background: #1a0a14; }
+      html[data-theme-pair="rose"][data-bs-theme="dark"] header.navbar.keywarden-top-header { background: rgba(18, 6, 14, 0.82) !important; }
+      html[data-theme-pair="rose"][data-bs-theme="light"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 20% 15%, rgba(244, 114, 182, 0.12) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 70%, rgba(219, 39, 119, 0.08) 0%, transparent 50%),
+          #fdf2f8;
+      }
+      html[data-theme-pair="rose"][data-bs-theme="dark"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 20% 15%, rgba(244, 114, 182, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 70%, rgba(219, 39, 119, 0.05) 0%, transparent 50%),
+          #1a0a14;
+      }
+      html[data-theme-pair="rose"] .page-body { background: transparent; }
       html[data-theme-pair="rose"] .keywarden-header-brand .keywarden-brand i.ti { color: #f472b6; }
       html[data-theme-pair="rose"] .nav-category { color: rgba(220, 160, 190, 0.6); }
       html[data-theme-pair="rose"][data-bs-theme="light"] ::selection { background: #fbcfe8; color: #831843; }
@@ -548,18 +610,101 @@
       html[data-theme-pair="nord"][data-bs-theme="dark"],
       html[data-theme-pair="nord"][data-bs-theme="dark"] body { background-color: #1e2128 !important; }
       html[data-theme-pair="nord"][data-bs-theme="light"] .navbar-vertical,
-      html[data-theme-pair="nord"][data-bs-theme="light"] header.navbar.keywarden-top-header { background: #2e3440 !important; }
+      html[data-theme-pair="nord"][data-bs-theme="light"] header.navbar.keywarden-top-header { background: rgba(46, 52, 64, 0.82) !important; }
       html[data-theme-pair="nord"][data-bs-theme="dark"] .navbar-vertical,
-      html[data-theme-pair="nord"][data-bs-theme="dark"] header.navbar.keywarden-top-header { background: #14171c !important; }
-      html[data-theme-pair="nord"][data-bs-theme="light"] .page-wrapper { background: #eceff4; }
-      html[data-theme-pair="nord"][data-bs-theme="dark"] .page-wrapper,
-      html[data-theme-pair="nord"][data-bs-theme="dark"] .page-body { background: #1e2128; }
+      html[data-theme-pair="nord"][data-bs-theme="dark"] header.navbar.keywarden-top-header { background: rgba(20, 23, 28, 0.82) !important; }
+      html[data-theme-pair="nord"][data-bs-theme="light"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 15% 10%, rgba(136, 192, 208, 0.12) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 60%, rgba(94, 129, 172, 0.08) 0%, transparent 50%),
+          #eceff4;
+      }
+      html[data-theme-pair="nord"][data-bs-theme="dark"] .page-wrapper {
+        background:
+          radial-gradient(ellipse at 15% 10%, rgba(136, 192, 208, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 60%, rgba(94, 129, 172, 0.05) 0%, transparent 50%),
+          #1e2128;
+      }
+      html[data-theme-pair="nord"] .page-body { background: transparent; }
       html[data-theme-pair="nord"] .keywarden-header-brand .keywarden-brand i.ti { color: #88c0d0; }
       html[data-theme-pair="nord"] .nav-category { color: rgba(160, 180, 200, 0.6); }
       html[data-theme-pair="nord"][data-bs-theme="light"] ::selection { background: #d8dee9; color: #2e3440; }
       html[data-theme-pair="nord"][data-bs-theme="light"] ::-moz-selection { background: #d8dee9; color: #2e3440; }
       html[data-theme-pair="nord"][data-bs-theme="dark"] ::selection { background: #434c5e; color: #eceff4; }
       html[data-theme-pair="nord"][data-bs-theme="dark"] ::-moz-selection { background: #434c5e; color: #eceff4; }
+
+      /* ═══════════════════════════════════════════════════════════ */
+      /* GLASSMORPHISM                                               */
+      /* ═══════════════════════════════════════════════════════════ */
+
+      /* ── Glass Cards ── */
+      .page-wrapper .card {
+        background: rgba(255, 255, 255, 0.45) !important;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.5) !important;
+        box-shadow:
+          0 4px 24px rgba(0, 0, 0, 0.06),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        transition: box-shadow 0.25s ease, border-color 0.25s ease;
+      }
+      .page-wrapper .card:hover {
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        border-color: rgba(255, 255, 255, 0.6) !important;
+      }
+      [data-bs-theme="dark"] .page-wrapper .card {
+        background: rgba(15, 24, 41, 0.45) !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
+        box-shadow:
+          0 4px 24px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      }
+      [data-bs-theme="dark"] .page-wrapper .card:hover {
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.10);
+        border-color: rgba(255, 255, 255, 0.15) !important;
+      }
+      .page-wrapper .card .form-control,
+      .page-wrapper .card .form-select {
+        background: rgba(255, 255, 255, 0.5);
+        border-color: rgba(0, 0, 0, 0.1);
+      }
+      [data-bs-theme="dark"] .page-wrapper .card .form-control,
+      [data-bs-theme="dark"] .page-wrapper .card .form-select {
+        background: rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+
+      /* ── Glass Dropdown Menus ── */
+      .dropdown-menu {
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        background: rgba(255, 255, 255, 0.88) !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+      [data-bs-theme="dark"] .dropdown-menu {
+        background: rgba(15, 24, 41, 0.88) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      }
+
+      /* ── Glass Modal ── */
+      .modal-content {
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        background: rgba(255, 255, 255, 0.88) !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+      [data-bs-theme="dark"] .modal-content {
+        background: rgba(15, 24, 41, 0.88) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      }
     </style>
     <!-- Tabler CSS (self-hosted to prevent FOUC) -->
     <link rel="stylesheet" href="/static/css/tabler.min.css">
@@ -793,7 +938,7 @@
           <div class="container-xl">
             <div class="row text-center align-items-center">
               <div class="col-12">
-                <span class="text-secondary">&copy; 2026 Keywarden – Centralized SSH Key Management and Deployment | AGPLv3</span>
+                <span class="text-secondary">&copy; 2026 <a href="https://keywarden.app" target="_blank" rel="noopener noreferrer" class="text-secondary text-decoration-none">Keywarden</a> – Centralized SSH Key Management and Deployment · <a href="{{releasesPageURL}}" target="_blank" rel="noopener noreferrer" class="text-secondary text-decoration-none">{{appVersion}}</a>{{if updateAvailable}} · <a href="{{releaseURL}}" target="_blank" rel="noopener noreferrer" class="text-warning" title="Update verfügbar"><i class="ti ti-download"></i> {{latestVersion}} verfügbar</a>{{end}}</span>
               </div>
             </div>
           </div>

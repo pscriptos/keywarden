@@ -615,20 +615,32 @@ func (s *Service) TestSSHAuth(hostname string, port int, username string, privat
 
 // logDeployment records a deployment attempt
 func (s *Service) logDeployment(keyID, serverID int64, status, message string) {
-	s.db.Exec(
-		`INSERT INTO key_deployments (ssh_key_id, server_id, status, message) VALUES (?, ?, ?, ?)`,
-		keyID, serverID, status, message,
-	)
+	if keyID <= 0 {
+		// Master key or virtual key: store with NULL ssh_key_id
+		s.db.Exec(
+			`INSERT INTO key_deployments (ssh_key_id, server_id, status, message, key_name) VALUES (NULL, ?, ?, ?, '[MASTER] System Master Key')`,
+			serverID, status, message,
+		)
+	} else {
+		var keyName string
+		s.db.QueryRow(`SELECT name FROM ssh_keys WHERE id = ?`, keyID).Scan(&keyName)
+		s.db.Exec(
+			`INSERT INTO key_deployments (ssh_key_id, server_id, status, message, key_name) VALUES (?, ?, ?, ?, ?)`,
+			keyID, serverID, status, message, keyName,
+		)
+	}
 }
 
 // GetDeployments returns deployment history for a user's keys
 func (s *Service) GetDeployments(userID int64) ([]map[string]interface{}, error) {
 	rows, err := s.db.Query(
-		`SELECT kd.id, sk.name as key_name, srv.name as server_name, kd.status, kd.message, kd.deployed_at
+		`SELECT kd.id,
+			CASE WHEN kd.key_name != '' THEN kd.key_name ELSE COALESCE(sk.name, 'Unknown') END as key_name,
+			srv.name as server_name, kd.status, kd.message, kd.deployed_at
 		 FROM key_deployments kd
-		 JOIN ssh_keys sk ON kd.ssh_key_id = sk.id
+		 LEFT JOIN ssh_keys sk ON kd.ssh_key_id = sk.id
 		 JOIN servers srv ON kd.server_id = srv.id
-		 WHERE sk.user_id = ?
+		 WHERE sk.user_id = ? OR kd.ssh_key_id IS NULL
 		 ORDER BY kd.deployed_at DESC LIMIT 50`, userID,
 	)
 	if err != nil {

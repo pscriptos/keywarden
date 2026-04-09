@@ -59,9 +59,12 @@ Server groups are used as targets for:
 1. Navigate to **Deploy**
 2. Select an **SSH key** from the dropdown (shows all keys from all users)
 3. Select a **target server**
-4. Click **Deploy**
+4. Choose an authentication method (password or existing key)
+5. Click **Deploy**
 
-Keywarden connects to the target server using the system master key and appends the selected public key to the server user's `~/.ssh/authorized_keys`.
+Keywarden connects to the target server and appends the selected public key to the server user's `~/.ssh/authorized_keys`.
+
+> **Owner only:** The SSH key dropdown includes the **[MASTER] System Master Key** as the first option. This allows the owner to deploy the system master key directly to servers from the Deploy page — useful for initial server setup or re-deployment after master key regeneration.
 
 ### Group Deployment
 
@@ -74,7 +77,9 @@ The key is deployed to all servers in the group sequentially.
 
 ### Deployment History
 
-The deploy page shows the last 50 deployment results with status (success/failed) and error messages.
+The deploy page shows the last 50 deployment results with status (success/failed) and error messages. Master key deployments are included in the history as **[MASTER] System Master Key**.
+
+After each deployment (single host or group), a flash message is displayed at the top of the page indicating success or failure.
 
 ## Access Assignments
 
@@ -220,13 +225,17 @@ Navigate to **System** to view runtime information:
 
 Keywarden automatically checks for new releases in the background by querying the Gitea releases API. If a newer version is available, a yellow update badge is displayed in the top header for **Admin** and **Owner** users. The badge links directly to the release page on Gitea.
 
-The update checker is only active when the application was built with a version tag (via `--build-arg VERSION=...`). Development builds (`dev`) skip the check entirely.
+The update checker is only active when the application was built with a proper version tag. Development builds without a version skip the check entirely.
 
 ## Admin Settings (Owner Only)
 
 See [Roles & Permissions](roles.md) for details on which settings are owner-only.
 
 Navigate to **Admin Settings** (owner only) to configure:
+
+### Login Page Customization
+
+- **Background Image** — Upload a custom background image for the login page (max 5 MB, JPEG/PNG/WebP). The image is centered and fills the screen without distortion (`background-size: cover`). The text color (heading, subtitle, footer) is automatically adjusted based on the image brightness — light text for dark images, dark text for bright images. The login card always uses a glass effect (transparent, blurred backdrop).
 
 ### Application Settings
 

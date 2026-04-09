@@ -18,6 +18,8 @@ import (
 const (
 	// Gitea API endpoint for releases
 	releasesAPI = "https://git.techniverse.net/api/v1/repos/scriptos/keywarden/releases?limit=5"
+	// Public releases page URL
+	ReleasesPageURL = "https://git.techniverse.net/scriptos/keywarden/releases"
 	// How often to check for updates
 	checkInterval = 6 * time.Hour
 	// HTTP timeout for API requests
@@ -155,6 +157,8 @@ func (s *Service) check() {
 
 // isNewer returns true if latest is a higher version than current.
 // Both may optionally have a "v" prefix (e.g. "v1.2.3").
+// Pre-release versions (e.g. "v1.0.0-alpha") are considered older than the
+// same version without a suffix (e.g. "v1.0.0").
 func isNewer(latest, current string) bool {
 	latestParts := parseVersion(latest)
 	currentParts := parseVersion(current)
@@ -174,12 +178,25 @@ func isNewer(latest, current string) bool {
 			return false
 		}
 	}
+
+	// Numeric parts are equal – a stable release is newer than a pre-release
+	// of the same version (e.g. v0.3.0 > v0.3.0-alpha).
+	if hasPreRelease(current) && !hasPreRelease(latest) {
+		return true
+	}
+
 	return false
 }
 
-// parseVersion strips the "v" prefix and splits "1.2.3" into [1, 2, 3].
+// parseVersion strips the "v" prefix and pre-release suffixes (e.g. "-alpha")
+// then splits "1.2.3" into [1, 2, 3].
+// A pre-release version is indicated by returning isPreRelease = true.
 func parseVersion(v string) []int {
 	v = strings.TrimPrefix(v, "v")
+	// Strip pre-release suffix (e.g. "-alpha", "-beta.1", "-rc1")
+	if idx := strings.IndexByte(v, '-'); idx >= 0 {
+		v = v[:idx]
+	}
 	parts := strings.Split(v, ".")
 	nums := make([]int, 0, len(parts))
 	for _, p := range parts {
@@ -190,4 +207,11 @@ func parseVersion(v string) []int {
 		nums = append(nums, n)
 	}
 	return nums
+}
+
+// hasPreRelease returns true when the version string contains a pre-release
+// suffix (e.g. "-alpha", "-beta", "-rc1").
+func hasPreRelease(v string) bool {
+	v = strings.TrimPrefix(v, "v")
+	return strings.ContainsRune(v, '-')
 }

@@ -36,7 +36,7 @@ internal/
   logging/                ← Structured logging with levels
   mail/                   ← SMTP email service (notifications, invitations)
   models/                 ← Data models (User, SSHKey, Server, etc.)
-  security/               ← CSRF, security headers, rate limiting, proxy detection
+  security/               ← CSRF, security headers, rate limiting, gzip compression, proxy detection
   servers/                ← Server and server group management, access assignments
   sshutil/                ← SSH key generation (RSA, Ed25519, Ed448)
   updater/                ← Background update checker (Gitea releases API)
@@ -59,7 +59,7 @@ web/
 8. **Configure security** subsystem (trusted proxy parsing)
 9. **Set up HTTP routes** and load templates
 10. **Start session cleanup** goroutine (removes expired sessions every minute)
-11. **Apply middleware chain**: request logger → security headers → rate limiting → size limiting → CSRF
+11. **Apply middleware chain**: request logger → security headers → rate limiting → size limiting → CSRF → gzip compression
 12. **Start cron scheduler** (checks for pending jobs every 30 seconds)
 13. **Start key enforcement worker** (if enabled in Admin Settings)
 14. **Start HTTP server**
@@ -95,6 +95,7 @@ Client → [Nginx/Caddy] → Keywarden HTTP Server
                               ├── Rate Limit Middleware (login endpoints)
                               ├── Size Limit Middleware
                               ├── CSRF Middleware (double-submit cookie)
+                              ├── Gzip Compression Middleware
                               │
                               ├── Public Routes (/login, /invite/*)
                               ├── Auth Routes (requireAuth → all authenticated users)

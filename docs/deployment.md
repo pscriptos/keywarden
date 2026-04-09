@@ -46,7 +46,7 @@ The Dockerfile uses a two-stage build:
 
 The runtime container runs as a non-root user (`keywarden`).
 
-The build accepts an optional `VERSION` build arg (e.g. `--build-arg VERSION=v1.0.0`) which is injected into the binary via `-ldflags`. This enables the built-in update checker to compare the running version against the latest Gitea release. If omitted, the version defaults to `dev` and the update checker is disabled.
+The build accepts an optional `VERSION` build arg (e.g. `--build-arg VERSION=v1.0.0`) which is injected into the binary via `-ldflags`. If omitted, the version is automatically extracted from `internal/version/version.go`. The CI release pipeline passes the Git tag as `VERSION` automatically.
 
 ### Docker Compose
 
@@ -98,6 +98,9 @@ KEYWARDEN_ENCRYPTION_KEY=generate-another-random-string-32-chars
 KEYWARDEN_PORT=8080
 KEYWARDEN_LOG_LEVEL=INFO
 
+# Timezone (IANA, e.g. Europe/Berlin, America/New_York)
+TZ=UTC
+
 # Initial owner (only used on first startup)
 KEYWARDEN_OWNER_USER=admin
 KEYWARDEN_OWNER_EMAIL=admin@example.com
@@ -132,6 +135,7 @@ All persistent data is stored in the `/data` volume:
 | `/data/keys/` | Reserved for future use |
 | `/data/master/` | Reserved for future use |
 | `/data/avatars/` | User profile pictures |
+| `/data/branding/` | Login page branding assets (background images) |
 
 > **Important:** The SQLite database contains encrypted private keys. Back up the `/data` volume regularly. See [Backup & Restore](backup-restore.md).
 

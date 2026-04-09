@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"git.techniverse.net/scriptos/keywarden/internal/audit"
 	"git.techniverse.net/scriptos/keywarden/internal/auth"
@@ -25,16 +26,10 @@ import (
 	"git.techniverse.net/scriptos/keywarden/internal/security"
 	"git.techniverse.net/scriptos/keywarden/internal/servers"
 	"git.techniverse.net/scriptos/keywarden/internal/updater"
+	"git.techniverse.net/scriptos/keywarden/internal/version"
 	"git.techniverse.net/scriptos/keywarden/internal/worker"
 	"git.techniverse.net/scriptos/keywarden/web"
 )
-
-// Version is set at build time via -ldflags:
-//
-//	go build -ldflags "-X main.Version=v1.0.0" ./cmd/keywarden/
-//
-// When building with Docker, pass --build-arg VERSION=v1.0.0
-var Version = "dev"
 
 func main() {
 	// Handle CLI subcommands before starting the server
@@ -52,11 +47,15 @@ func main() {
 	// Load config first (needed for log level)
 	cfg := config.Load()
 
+	// Set application-wide timezone from TZ environment variable
+	time.Local = cfg.Timezone
+
 	// Initialize structured logging
 	logging.Init(cfg.LogLevel)
 
-	logging.Info("🔑 Keywarden %s - Centralized SSH Key Management and Deployment", Version)
+	logging.Info("🔑 Keywarden %s - Centralized SSH Key Management and Deployment", version.Version)
 	logging.Info("   https://git.techniverse.net/scriptos/keywarden")
+	logging.Info("Timezone: %s", cfg.Timezone)
 
 	// Validate data paths – relative paths inside a container bypass the
 	// persistent volume mount and lead to silent data loss on restart.
@@ -126,7 +125,7 @@ func main() {
 	}
 
 	// Initialize update checker
-	updaterSvc := updater.NewService(Version)
+	updaterSvc := updater.NewService(version.Version)
 
 	// Setup HTTP handlers
 	handler := handlers.New(authSvc, keysSvc, serversSvc, deploySvc, auditSvc, cronSvc, workerSvc, mailSvc, db, web.TemplateFS, web.StaticFS, cfg.DataDir, cfg.SecureCookies, cfg.BaseURL, updaterSvc)
@@ -139,6 +138,7 @@ func main() {
 
 	// Build middleware chain (innermost → outermost)
 	var h http.Handler = mux
+	h = security.GzipMiddleware()(h)
 	h = security.CSRFMiddleware(cfg.SecureCookies)(h)
 	h = security.SizeLimitMiddleware(cfg.MaxRequestSize)(h)
 	h = security.RateLimitMiddleware(cfg.RateLimitLogin)(h)
@@ -293,7 +293,7 @@ func handleResetPassword(args []string) {
 
 // printUsage displays available CLI subcommands
 func printUsage() {
-	fmt.Printf("Keywarden %s - Centralized SSH Key Management and Deployment\n", Version)
+	fmt.Printf("Keywarden %s - Centralized SSH Key Management and Deployment\n", version.Version)
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  keywarden                                         Start the server")

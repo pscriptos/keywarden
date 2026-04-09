@@ -223,7 +223,7 @@
                 <span class="badge bg-danger-lt"><i class="ti ti-x"></i> Failed</span>
                 {{end}}
               </td>
-              <td>{{index . "deployed_at"}}</td>
+              <td>{{formatDateTime (index . "deployed_at")}}</td>
             </tr>
             {{else}}
             <tr>

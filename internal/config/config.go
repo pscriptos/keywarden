@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Config holds all application configuration
@@ -29,6 +30,9 @@ type Config struct {
 	SMTPFrom     string
 	SMTPTLS      bool
 	SMTPEnabled  bool
+
+	// Timezone
+	Timezone *time.Location // parsed from TZ env var; defaults to UTC
 
 	// Security / Hardening
 	BaseURL        string // e.g. "https://keywarden.example.com" (used for emails, cookie config)
@@ -55,6 +59,13 @@ func Load() *Config {
 	rateLimitLogin := getEnvInt("KEYWARDEN_RATE_LIMIT_LOGIN", 10)
 	maxRequestSize := getEnvInt64("KEYWARDEN_MAX_REQUEST_SIZE", 10*1024*1024) // 10 MB
 
+	// Load timezone from TZ environment variable (standard for Docker)
+	tzName := getEnv("TZ", "UTC")
+	tz, err := time.LoadLocation(tzName)
+	if err != nil {
+		tz = time.UTC
+	}
+
 	return &Config{
 		Port:          getEnv("KEYWARDEN_PORT", "8080"),
 		DBPath:        getEnv("KEYWARDEN_DB_PATH", "./data/keywarden.db"),
@@ -72,6 +83,8 @@ func Load() *Config {
 		SMTPFrom:     getEnv("KEYWARDEN_SMTP_FROM", "keywarden@localhost"),
 		SMTPTLS:      getEnv("KEYWARDEN_SMTP_TLS", "true") == "true",
 		SMTPEnabled:  smtpHost != "",
+
+		Timezone: tz,
 
 		BaseURL:        baseURL,
 		TrustedProxies: getEnv("KEYWARDEN_TRUSTED_PROXIES", ""),

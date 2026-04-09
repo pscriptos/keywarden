@@ -61,6 +61,7 @@ const (
 	ActionMasterKeyRegenerated = "masterkey_regenerated"
 	ActionMasterKeyRegenFailed = "masterkey_regen_failed"
 	ActionAvatarChanged        = "avatar_changed"
+	ActionBrandingChanged      = "branding_changed"
 
 	// Email
 	ActionEmailNotifyChanged = "email_notify_changed"

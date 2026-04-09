@@ -43,7 +43,7 @@ go mod download
 CGO_ENABLED=1 go build -o keywarden ./cmd/keywarden/
 
 # Build with version (optional, enables update checker)
-CGO_ENABLED=1 go build -ldflags="-X 'main.Version=v1.0.0'" -o keywarden ./cmd/keywarden/
+CGO_ENABLED=1 go build -ldflags="-X 'git.techniverse.net/scriptos/keywarden/internal/version.Version=v1.0.0'" -o keywarden ./cmd/keywarden/
 
 # Run
 ./keywarden
@@ -82,6 +82,7 @@ keywarden/
 │   │   ├── csrf.go             # CSRF double-submit cookie middleware
 │   │   ├── headers.go          # Security headers middleware (CSP, X-Frame-Options, etc.)
 │   │   ├── proxy.go            # Trusted proxy IP extraction
+│   │   ├── gzip.go             # Gzip compression middleware
 │   │   ├── ratelimit.go        # IP-based rate limiting middleware
 │   │   └── sizelimit.go        # Request body size limit middleware
 │   ├── servers/servers.go      # Server and group management, access assignments
@@ -91,6 +92,9 @@ keywarden/
 │   ├── embed.go                # Go embed directives
 │   ├── static/                 # CSS, JS, fonts (Tabler UI)
 │   └── templates/              # HTML templates
+├── tools/
+│   ├── subset-icons.py         # Tabler Icons font/CSS subset tool
+│   └── tabler-icons-full/      # Full Tabler Icons source files
 ├── docs/                       # Documentation
 ├── Dockerfile                  # Multi-stage Docker build
 ├── docker-compose.yml          # Docker Compose configuration

@@ -8,11 +8,12 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	htmltpl "html/template"
 	"mime"
 	"net"
 	"net/smtp"
 	"strings"
-	"text/template"
+	texttpl "text/template"
 	"time"
 
 	"git.techniverse.net/scriptos/keywarden/internal/config"
@@ -66,7 +67,7 @@ func (s *Service) SendLoginNotification(toEmail string, data LoginNotificationDa
 		return nil
 	}
 
-	htmlBody, err := renderTemplate(loginNotificationHTML, data)
+	htmlBody, err := renderHTMLTemplate(loginNotificationHTML, data)
 	if err != nil {
 		return fmt.Errorf("failed to render HTML template: %w", err)
 	}
@@ -108,7 +109,7 @@ func (s *Service) SendInvitation(toEmail string, data InvitationData) error {
 		return fmt.Errorf("email is not configured (KEYWARDEN_SMTP_HOST not set)")
 	}
 
-	htmlBody, err := renderTemplate(invitationHTML, data)
+	htmlBody, err := renderHTMLTemplate(invitationHTML, data)
 	if err != nil {
 		return fmt.Errorf("failed to render invitation HTML template: %w", err)
 	}
@@ -317,7 +318,21 @@ func (s *Service) send(to string, msg []byte) error {
 }
 
 func renderTemplate(tmplStr string, data interface{}) (string, error) {
-	tmpl, err := template.New("email").Parse(tmplStr)
+	tmpl, err := texttpl.New("email").Parse(tmplStr)
+	if err != nil {
+		return "", err
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// renderHTMLTemplate uses html/template for proper context-aware escaping,
+// preventing XSS in HTML email bodies when user-supplied data is included.
+func renderHTMLTemplate(tmplStr string, data interface{}) (string, error) {
+	tmpl, err := htmltpl.New("email").Parse(tmplStr)
 	if err != nil {
 		return "", err
 	}

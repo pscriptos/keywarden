@@ -15,13 +15,47 @@
     </script>
     <style>
       html[data-bs-theme="dark"],
-      html[data-bs-theme="dark"] body { background-color: #1a2234; color-scheme: dark; }
+      html[data-bs-theme="dark"] body {
+        background:
+          radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 60%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+          #1a2234;
+        color-scheme: dark;
+      }
       html[data-bs-theme="light"],
-      html[data-bs-theme="light"] body { background-color: #f1f5f9; color-scheme: light; }
+      html[data-bs-theme="light"] body {
+        background:
+          radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.10) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 60%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+          #f1f5f9;
+        color-scheme: light;
+      }
       [data-bs-theme="dark"] ::selection { background: #3d6098; color: #f0f4f8; }
       [data-bs-theme="dark"] ::-moz-selection { background: #3d6098; color: #f0f4f8; }
       [data-bs-theme="light"] ::selection { background: #b3d4fc; color: #1a1a1a; }
       [data-bs-theme="light"] ::-moz-selection { background: #b3d4fc; color: #1a1a1a; }
+      /* Consistent spacing between Tabler icons and adjacent text */
+      i.ti { margin-right: 0.25em; }
+      .btn-icon > i.ti, .input-icon-addon > i.ti { margin-right: 0; }
+      /* Glass Card Effect */
+      .card {
+        background: rgba(255, 255, 255, 0.45) !important;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.5) !important;
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      }
+      [data-bs-theme="dark"] .card {
+        background: rgba(26, 34, 52, 0.45) !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      }
+      .card .form-control { background: rgba(255,255,255,0.5); }
+      [data-bs-theme="dark"] .card .form-control { background: rgba(0,0,0,0.2); }
     </style>
     <link rel="stylesheet" href="/static/css/tabler.min.css">
     <link rel="stylesheet" href="/static/css/tabler-icons.min.css">

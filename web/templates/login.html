@@ -26,6 +26,51 @@
       [data-bs-theme="dark"] ::-moz-selection { background: #3d6098; color: #f0f4f8; }
       [data-bs-theme="light"] ::selection { background: #b3d4fc; color: #1a1a1a; }
       [data-bs-theme="light"] ::-moz-selection { background: #b3d4fc; color: #1a1a1a; }
+      /* Dimmed subtitle & footer on login page */
+      .login-subtitle { opacity: 0.55; }
+      .login-footer { opacity: 0.55; }
+      /* Consistent spacing between Tabler icons and adjacent text */
+      i.ti { margin-right: 0.25em; }
+      .btn-icon > i.ti, .input-icon-addon > i.ti { margin-right: 0; }
+      {{if loginBgImage}}
+      /* Custom background image */
+      body {
+        background-image: url('{{loginBgImage}}') !important;
+        background-size: cover !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+      }
+      {{if eq (loginTextColor) "dark"}}
+      /* Dark text for light background images */
+      .login-heading { text-shadow: 0 1px 6px rgba(255,255,255,0.7); color: #0a0f1a !important; }
+      .login-subtitle.text-secondary { text-shadow: 0 1px 4px rgba(255,255,255,0.6); color: rgba(10,15,26,0.85) !important; opacity: 0.75; }
+      .login-footer.text-secondary { text-shadow: 0 1px 4px rgba(255,255,255,0.6); color: rgba(10,15,26,0.80) !important; opacity: 0.70; }
+      .login-footer.text-secondary a.text-secondary { color: rgba(10,15,26,0.80) !important; }
+      {{else}}
+      /* Light text for dark background images (default) */
+      .login-heading { text-shadow: 0 2px 10px rgba(0,0,0,0.7); color: #fff !important; }
+      .login-subtitle.text-secondary { text-shadow: 0 2px 6px rgba(0,0,0,0.6); color: rgba(255,255,255,0.95) !important; opacity: 0.80; }
+      .login-footer.text-secondary { text-shadow: 0 2px 6px rgba(0,0,0,0.6); color: rgba(255,255,255,0.90) !important; opacity: 0.75; }
+      .login-footer.text-secondary a.text-secondary { color: rgba(255,255,255,0.90) !important; }
+      {{end}}
+      {{end}}
+      /* Glass card effect (always active) */
+      .card {
+        background: rgba(255, 255, 255, 0.15) !important;
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      }
+      [data-bs-theme="dark"] .card {
+        background: rgba(26, 34, 52, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      }
+      .card .form-control { background: rgba(255,255,255,0.55); }
+      [data-bs-theme="dark"] .card .form-control { background: rgba(0,0,0,0.3); }
+      .card .form-label, .card .h2, .card h2 { text-shadow: none; }
     </style>
     <!-- Tabler CSS (self-hosted to prevent FOUC) -->
     <link rel="stylesheet" href="/static/css/tabler.min.css">
@@ -35,8 +80,8 @@
     <div class="page page-center">
       <div class="container container-tight py-4">
         <div class="text-center mb-4">
-          <h1><i class="ti ti-key"></i> {{appName}}</h1>
-          <p class="text-secondary">Centralized SSH Key Management and Deployment</p>
+          <h1 class="login-heading"><i class="ti ti-key"></i> {{appName}}</h1>
+          <p class="text-secondary login-subtitle">Centralized SSH Key Management and Deployment</p>
         </div>
         <div class="card card-md">
           <div class="card-body">
@@ -103,8 +148,8 @@
             {{end}}
           </div>
         </div>
-        <div class="text-center text-secondary mt-3">
-          &copy; 2026 Keywarden | AGPLv3
+        <div class="text-center text-secondary login-footer mt-3">
+          &copy; 2026 <a href="https://keywarden.app" target="_blank" rel="noopener noreferrer" class="text-secondary text-decoration-none">Keywarden</a>
         </div>
       </div>
     </div>

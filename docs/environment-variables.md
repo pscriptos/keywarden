@@ -12,6 +12,7 @@ Complete reference of all configuration options for Keywarden. All settings are 
 | `KEYWARDEN_KEYS_DIR` | `./data/keys` | Directory for key storage (reserved) |
 | `KEYWARDEN_MASTER_DIR` | `./data/master` | Directory for master key storage (reserved) |
 | `KEYWARDEN_LOG_LEVEL` | `INFO` | Log level: `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE` |
+| `TZ` | `UTC` | Timezone for all displayed timestamps (e.g., `Europe/Berlin`, `America/New_York`). Uses standard IANA timezone names. |
 
 ## Security
 
@@ -60,6 +61,7 @@ When running in the Docker container, these defaults are set in the Dockerfile:
 | `KEYWARDEN_DATA_DIR` | `/data` |
 | `KEYWARDEN_KEYS_DIR` | `/data/keys` |
 | `KEYWARDEN_MASTER_DIR` | `/data/master` |
+| `TZ` | `UTC` |
 
 ## Example .env File
 
@@ -75,6 +77,9 @@ KEYWARDEN_ENCRYPTION_KEY=mX9nP2qR4sT6uV8wY0zA1bC3dE5fG7hI
 # Application
 KEYWARDEN_PORT=8080
 KEYWARDEN_LOG_LEVEL=INFO
+
+# Timezone (IANA timezone name, e.g. Europe/Berlin)
+TZ=Europe/Berlin
 
 # Initial owner (only used on first startup)
 KEYWARDEN_OWNER_USER=admin
@@ -115,3 +120,4 @@ In addition to environment variables, the following settings are configured thro
 | `lockout_attempts` | `5` | Failed login attempts before lockout (0 = disabled) |
 | `lockout_duration` | `15` | Lockout duration in minutes |
 | `mfa_required` | `false` | Enforce MFA for all users |
+| `login_text_color` | `light` | Login text color over background image: `light` or `dark` (auto-detected on upload) |

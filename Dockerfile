@@ -12,8 +12,12 @@ RUN go mod download
 
 COPY . .
 
-ARG VERSION=dev
-RUN CGO_ENABLED=1 GOOS=linux go build -o keywarden -ldflags="-s -w -X main.Version=${VERSION}" ./cmd/keywarden/
+ARG VERSION=""
+RUN set -e; \
+    if [ -z "$VERSION" ]; then \
+      VERSION=$(grep 'var Version' internal/version/version.go | sed 's/.*"\(.*\)".*/\1/'); \
+    fi; \
+    CGO_ENABLED=1 GOOS=linux go build -o keywarden -ldflags="-s -w -X git.techniverse.net/scriptos/keywarden/internal/version.Version=${VERSION}" ./cmd/keywarden/
 
 # Stage 2: Runtime
 FROM alpine:3.21
@@ -36,6 +40,7 @@ ENV KEYWARDEN_DATA_DIR=/data
 ENV KEYWARDEN_KEYS_DIR=/data/keys
 ENV KEYWARDEN_MASTER_DIR=/data/master
 ENV KEYWARDEN_ENCRYPTION_KEY=change-me-encryption-key-32chars
+ENV TZ=UTC
 
 EXPOSE 8080
 
