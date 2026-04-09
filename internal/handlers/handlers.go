@@ -194,6 +194,7 @@ type SystemInfo struct {
 	Runtime      string // e.g. "Docker" or "Native"
 	Hostname     string
 	Uptime       string
+	Timezone     string
 }
 
 // AdminUserInfo holds user info for the admin settings page
@@ -343,6 +344,42 @@ func (h *Handler) loadTemplates(templateFS embed.FS) {
 		"loginSubtitle": func() string {
 			subtitle, _ := h.auth.GetSetting("login_subtitle")
 			return subtitle
+		},
+		// formatTime converts a time.Time to the app timezone and formats as "2006-01-02 15:04"
+		"formatTime": func(v interface{}) string {
+			switch t := v.(type) {
+			case time.Time:
+				return t.Local().Format("2006-01-02 15:04")
+			case *time.Time:
+				if t != nil {
+					return t.Local().Format("2006-01-02 15:04")
+				}
+			}
+			return ""
+		},
+		// formatDateTime converts a time.Time to the app timezone and formats as "2006-01-02 15:04:05"
+		"formatDateTime": func(v interface{}) string {
+			switch t := v.(type) {
+			case time.Time:
+				return t.Local().Format("2006-01-02 15:04:05")
+			case *time.Time:
+				if t != nil {
+					return t.Local().Format("2006-01-02 15:04:05")
+				}
+			}
+			return ""
+		},
+		// formatDateTimeLocal converts a time.Time to the app timezone and formats for HTML datetime-local inputs
+		"formatDateTimeLocal": func(v interface{}) string {
+			switch t := v.(type) {
+			case time.Time:
+				return t.Local().Format("2006-01-02T15:04")
+			case *time.Time:
+				if t != nil {
+					return t.Local().Format("2006-01-02T15:04")
+				}
+			}
+			return ""
 		},
 	}
 
@@ -3109,6 +3146,7 @@ func (h *Handler) handleSystemInfo(w http.ResponseWriter, r *http.Request) {
 		Runtime:      runtimeEnv,
 		Hostname:     hostname,
 		Uptime:       uptimeStr,
+		Timezone:     time.Local.String(),
 	}
 
 	data := &PageData{

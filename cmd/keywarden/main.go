@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"git.techniverse.net/scriptos/keywarden/internal/audit"
 	"git.techniverse.net/scriptos/keywarden/internal/auth"
@@ -46,11 +47,15 @@ func main() {
 	// Load config first (needed for log level)
 	cfg := config.Load()
 
+	// Set application-wide timezone from TZ environment variable
+	time.Local = cfg.Timezone
+
 	// Initialize structured logging
 	logging.Init(cfg.LogLevel)
 
 	logging.Info("🔑 Keywarden %s - Centralized SSH Key Management and Deployment", version.Version)
 	logging.Info("   https://git.techniverse.net/scriptos/keywarden")
+	logging.Info("Timezone: %s", cfg.Timezone)
 
 	// Validate data paths – relative paths inside a container bypass the
 	// persistent volume mount and lead to silent data loss on restart.

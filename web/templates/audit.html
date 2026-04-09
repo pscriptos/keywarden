@@ -34,7 +34,7 @@
             {{range .AuditEntries}}
             <tr>
               <td class="text-secondary">
-                <i class="ti ti-clock"></i> {{.CreatedAt.Format "2006-01-02 15:04:05"}}
+                <i class="ti ti-clock"></i> {{formatDateTime .CreatedAt}}
               </td>
               <td>
                 <span class="badge bg-cyan-lt"><i class="ti ti-user"></i> {{.Username}}</span>

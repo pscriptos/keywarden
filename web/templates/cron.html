@@ -109,12 +109,12 @@
                 {{if eq .Status "done"}}
                 <span class="text-secondary">—</span>
                 {{else}}
-                {{.NextRun.Format "2006-01-02 15:04"}} <small class="text-secondary">UTC</small>
+                {{formatTime .NextRun}}
                 {{end}}
               </td>
               <td>
                 {{if .LastRun}}
-                {{.LastRun.Format "2006-01-02 15:04"}} <small class="text-secondary">UTC</small>
+                {{formatTime .LastRun}}
                 {{else}}
                 <span class="text-secondary">never</span>
                 {{end}}

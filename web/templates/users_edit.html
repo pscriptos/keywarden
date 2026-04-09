@@ -79,7 +79,7 @@
               <div class="d-flex align-items-center">
                 <div class="me-3"><i class="ti ti-lock icon alert-icon"></i></div>
                 <div class="flex-fill">
-                  <strong>Account locked</strong> until {{.EditUser.LockedUntil.Format "2006-01-02 15:04"}} ({{.EditUser.FailedLoginAttempts}} failed attempts)
+                  <strong>Account locked</strong> until {{formatTime .EditUser.LockedUntil}} ({{.EditUser.FailedLoginAttempts}} failed attempts)
                 </div>
               </div>
             </div>

@@ -47,7 +47,7 @@
               </td>
               <td>{{.Bits}}</td>
               <td><code class="small">{{.Fingerprint}}</code></td>
-              <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              <td>{{formatTime .CreatedAt}}</td>
               <td>
                 <div class="btn-list flex-nowrap">
                   <button type="button" class="btn btn-sm btn-icon btn-outline-primary" title="View Public Key" onclick="showPublicKey({{.ID}}, '{{.Name}}')">
@@ -89,7 +89,7 @@
               </td>
               <td>{{.Bits}}</td>
               <td><code class="small">{{.Fingerprint}}</code></td>
-              <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              <td>{{formatTime .CreatedAt}}</td>
               <td>
                 <div class="btn-list flex-nowrap">
                   <button type="button" class="btn btn-sm btn-icon btn-outline-primary" title="View Public Key" onclick="showPublicKey({{.ID}}, '{{.Name}}')">

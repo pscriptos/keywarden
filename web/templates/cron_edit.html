@@ -202,7 +202,7 @@
           <div class="mb-3 schedule-option" id="sched-once" {{if ne $job.Schedule "once"}}style="display:none;"{{end}}>
             <label class="form-label required">Date & Time</label>
             <input type="datetime-local" name="scheduled_at" class="form-control" id="cron-scheduled-at"
-              value="{{$job.ScheduledAt.Format "2006-01-02T15:04"}}">
+              value="{{formatDateTimeLocal $job.ScheduledAt}}">
             <small class="form-hint">Select the exact date and time for this one-time job.</small>
           </div>
 

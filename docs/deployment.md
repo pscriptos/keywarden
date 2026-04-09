@@ -98,6 +98,9 @@ KEYWARDEN_ENCRYPTION_KEY=generate-another-random-string-32-chars
 KEYWARDEN_PORT=8080
 KEYWARDEN_LOG_LEVEL=INFO
 
+# Timezone (IANA, e.g. Europe/Berlin, America/New_York)
+TZ=UTC
+
 # Initial owner (only used on first startup)
 KEYWARDEN_OWNER_USER=admin
 KEYWARDEN_OWNER_EMAIL=admin@example.com
