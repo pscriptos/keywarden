@@ -340,23 +340,12 @@ func (h *Handler) loadTemplates(templateFS embed.FS) {
 			}
 			return ""
 		},
-		"loginCardStyle": func() string {
-			style, _ := h.auth.GetSetting("login_card_style")
-			if style == "" {
-				return "default"
-			}
-			return style
-		},
 		"loginTextColor": func() string {
 			c, _ := h.auth.GetSetting("login_text_color")
 			if c == "" {
 				return "light"
 			}
 			return c
-		},
-		"loginSubtitle": func() string {
-			subtitle, _ := h.auth.GetSetting("login_subtitle")
-			return subtitle
 		},
 		// formatTime converts a time.Time to the app timezone and formats as "2006-01-02 15:04"
 		"formatTime": func(v interface{}) string {
@@ -3364,26 +3353,6 @@ func (h *Handler) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 	logging.Info("Admin settings POST: form_type=%s from user_id=%d", formType, userID)
 
 	switch formType {
-	case "branding_settings":
-		batch := make(map[string]string)
-		cardStyle := r.FormValue("login_card_style")
-		if cardStyle == "glass" || cardStyle == "default" {
-			batch["login_card_style"] = cardStyle
-			changed = append(changed, "login_card_style="+cardStyle)
-		}
-		subtitle := r.FormValue("login_subtitle")
-		batch["login_subtitle"] = subtitle
-		if subtitle != "" {
-			changed = append(changed, "login_subtitle="+subtitle)
-		}
-		if err := h.auth.SetSettingsBatch(batch); err != nil {
-			logging.Error("Failed to save branding settings: %v", err)
-			http.Redirect(w, r, "/admin/settings?flash_type=danger&flash_msg="+url.QueryEscape("Failed to save branding settings: "+err.Error()), http.StatusSeeOther)
-			return
-		}
-		if len(changed) > 0 {
-			h.audit.Log(userID, audit.ActionBrandingChanged, fmt.Sprintf("Branding settings updated: %s", strings.Join(changed, ", ")), clientIP(r))
-		}
 	case "security_settings":
 		// Collect all settings to save
 		batch := make(map[string]string)

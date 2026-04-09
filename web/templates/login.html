@@ -55,8 +55,7 @@
       .login-footer.text-secondary a.text-secondary { color: rgba(255,255,255,0.90) !important; }
       {{end}}
       {{end}}
-      {{if eq (loginCardStyle) "glass"}}
-      /* Glass card effect */
+      /* Glass card effect (always active) */
       .card {
         background: rgba(255, 255, 255, 0.15) !important;
         backdrop-filter: blur(16px) saturate(180%);
@@ -72,7 +71,6 @@
       .card .form-control { background: rgba(255,255,255,0.55); }
       [data-bs-theme="dark"] .card .form-control { background: rgba(0,0,0,0.3); }
       .card .form-label, .card .h2, .card h2 { text-shadow: none; }
-      {{end}}
     </style>
     <!-- Tabler CSS (self-hosted to prevent FOUC) -->
     <link rel="stylesheet" href="/static/css/tabler.min.css">
@@ -83,7 +81,7 @@
       <div class="container container-tight py-4">
         <div class="text-center mb-4">
           <h1 class="login-heading"><i class="ti ti-key"></i> {{appName}}</h1>
-          <p class="text-secondary login-subtitle">{{if loginSubtitle}}{{loginSubtitle}}{{else}}Centralized SSH Key Management and Deployment{{end}}</p>
+          <p class="text-secondary login-subtitle">Centralized SSH Key Management and Deployment</p>
         </div>
         <div class="card card-md">
           <div class="card-body">

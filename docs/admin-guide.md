@@ -235,9 +235,7 @@ Navigate to **Admin Settings** (owner only) to configure:
 
 ### Login Page Customization
 
-- **Background Image** — Upload a custom background image for the login page (max 5 MB, JPEG/PNG/WebP). The image is centered and fills the screen without distortion (`background-size: cover`). The text color (heading, subtitle, footer) is automatically adjusted based on the image brightness — light text for dark images, dark text for bright images.
-- **Card Style** — Choose between **Default** (solid card) and **Glass** (transparent, blurred backdrop).
-- **Subtitle** — Custom text shown below the application name on the login page. Leave empty for the default subtitle.
+- **Background Image** — Upload a custom background image for the login page (max 5 MB, JPEG/PNG/WebP). The image is centered and fills the screen without distortion (`background-size: cover`). The text color (heading, subtitle, footer) is automatically adjusted based on the image brightness — light text for dark images, dark text for bright images. The login card always uses a glass effect (transparent, blurred backdrop).
 
 ### Application Settings
 
