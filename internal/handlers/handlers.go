@@ -5,6 +5,7 @@
 package handlers
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha1"
@@ -15,6 +16,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"io/fs"
 	"math"
@@ -27,6 +31,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	_ "golang.org/x/image/webp"
 
 	"git.techniverse.net/scriptos/keywarden/internal/audit"
 	"git.techniverse.net/scriptos/keywarden/internal/auth"
@@ -340,6 +346,13 @@ func (h *Handler) loadTemplates(templateFS embed.FS) {
 				return "default"
 			}
 			return style
+		},
+		"loginTextColor": func() string {
+			c, _ := h.auth.GetSetting("login_text_color")
+			if c == "" {
+				return "light"
+			}
+			return c
 		},
 		"loginSubtitle": func() string {
 			subtitle, _ := h.auth.GetSetting("login_subtitle")
@@ -3212,7 +3225,14 @@ func (h *Handler) handleLoginBrandingUpload(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	h.audit.Log(userID, audit.ActionBrandingChanged, "Login background image uploaded", clientIP(r))
+	// Auto-detect brightness and set text color accordingly
+	textColor := analyzeImageBrightness(data)
+	if err := h.auth.SetSetting("login_text_color", textColor); err != nil {
+		logging.Warn("Failed to save auto-detected text color: %v", err)
+	}
+	logging.Info("Login background uploaded: auto-detected text color = %s", textColor)
+
+	h.audit.Log(userID, audit.ActionBrandingChanged, fmt.Sprintf("Login background image uploaded (auto text color: %s)", textColor), clientIP(r))
 	http.Redirect(w, r, "/admin/settings?flash_type=success&flash_msg="+url.QueryEscape("Background image uploaded successfully."), http.StatusSeeOther)
 }
 
@@ -3226,6 +3246,8 @@ func (h *Handler) handleLoginBrandingRemoveBg(w http.ResponseWriter, r *http.Req
 	userID := h.getUserID(r)
 	bgPath := filepath.Join(h.dataDir, "branding", "login_bg")
 	os.Remove(bgPath)
+	// Reset auto-detected text color
+	_ = h.auth.SetSetting("login_text_color", "light")
 
 	h.audit.Log(userID, audit.ActionBrandingChanged, "Login background image removed", clientIP(r))
 	http.Redirect(w, r, "/admin/settings?flash_type=success&flash_msg="+url.QueryEscape("Background image removed."), http.StatusSeeOther)
@@ -3249,6 +3271,55 @@ func (h *Handler) handleLoginBgServe(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Cache-Control", "public, max-age=3600")
 	w.Write(data)
+}
+
+// analyzeImageBrightness decodes an image and computes the average perceived
+// brightness using the ITU-R BT.709 luminance formula. It samples every Nth
+// pixel for performance. Returns "light" if the image is dark (bright text
+// needed) or "dark" if the image is bright (dark text needed).
+func analyzeImageBrightness(data []byte) string {
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		// Cannot decode → assume dark image, use light text
+		return "light"
+	}
+
+	bounds := img.Bounds()
+	width := bounds.Max.X - bounds.Min.X
+	height := bounds.Max.Y - bounds.Min.Y
+	totalPixels := width * height
+
+	// Sample step: aim for ~10 000 pixels max for performance
+	step := 1
+	if totalPixels > 10000 {
+		step = int(math.Sqrt(float64(totalPixels) / 10000))
+		if step < 1 {
+			step = 1
+		}
+	}
+
+	var sum float64
+	var count int
+	for y := bounds.Min.Y; y < bounds.Max.Y; y += step {
+		for x := bounds.Min.X; x < bounds.Max.X; x += step {
+			r, g, b, _ := img.At(x, y).RGBA()
+			// ITU-R BT.709 perceived luminance (values are 0–65535)
+			lum := 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)
+			sum += lum
+			count++
+		}
+	}
+
+	if count == 0 {
+		return "light"
+	}
+
+	avg := sum / float64(count)
+	// 65535 / 2 = 32767.5 → threshold at ~40% brightness
+	if avg < 26214 {
+		return "light" // dark image → use light/white text
+	}
+	return "dark" // bright image → use dark text
 }
 
 func (h *Handler) handleAdminSettings(w http.ResponseWriter, r *http.Request) {

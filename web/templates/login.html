@@ -26,6 +26,9 @@
       [data-bs-theme="dark"] ::-moz-selection { background: #3d6098; color: #f0f4f8; }
       [data-bs-theme="light"] ::selection { background: #b3d4fc; color: #1a1a1a; }
       [data-bs-theme="light"] ::-moz-selection { background: #b3d4fc; color: #1a1a1a; }
+      /* Dimmed subtitle & footer on login page */
+      .login-subtitle { opacity: 0.55; }
+      .login-footer { opacity: 0.55; }
       /* Consistent spacing between Tabler icons and adjacent text */
       i.ti { margin-right: 0.25em; }
       .btn-icon > i.ti, .input-icon-addon > i.ti { margin-right: 0; }
@@ -38,9 +41,19 @@
         background-repeat: no-repeat !important;
         background-attachment: fixed !important;
       }
-      .login-heading { text-shadow: 0 2px 8px rgba(0,0,0,0.5); color: #fff !important; }
-      .login-subtitle { text-shadow: 0 1px 4px rgba(0,0,0,0.4); color: rgba(255,255,255,0.85) !important; }
-      .login-footer { text-shadow: 0 1px 4px rgba(0,0,0,0.4); color: rgba(255,255,255,0.7) !important; }
+      {{if eq (loginTextColor) "dark"}}
+      /* Dark text for light background images */
+      .login-heading { text-shadow: 0 1px 6px rgba(255,255,255,0.7); color: #0a0f1a !important; }
+      .login-subtitle.text-secondary { text-shadow: 0 1px 4px rgba(255,255,255,0.6); color: rgba(10,15,26,0.85) !important; opacity: 0.75; }
+      .login-footer.text-secondary { text-shadow: 0 1px 4px rgba(255,255,255,0.6); color: rgba(10,15,26,0.80) !important; opacity: 0.70; }
+      .login-footer.text-secondary a.text-secondary { color: rgba(10,15,26,0.80) !important; }
+      {{else}}
+      /* Light text for dark background images (default) */
+      .login-heading { text-shadow: 0 2px 10px rgba(0,0,0,0.7); color: #fff !important; }
+      .login-subtitle.text-secondary { text-shadow: 0 2px 6px rgba(0,0,0,0.6); color: rgba(255,255,255,0.95) !important; opacity: 0.80; }
+      .login-footer.text-secondary { text-shadow: 0 2px 6px rgba(0,0,0,0.6); color: rgba(255,255,255,0.90) !important; opacity: 0.75; }
+      .login-footer.text-secondary a.text-secondary { color: rgba(255,255,255,0.90) !important; }
+      {{end}}
       {{end}}
       {{if eq (loginCardStyle) "glass"}}
       /* Glass card effect */

@@ -34,6 +34,9 @@
       [data-bs-theme="dark"] ::-moz-selection { background: #3d6098; color: #f0f4f8; }
       [data-bs-theme="light"] ::selection { background: #b3d4fc; color: #1a1a1a; }
       [data-bs-theme="light"] ::-moz-selection { background: #b3d4fc; color: #1a1a1a; }
+      /* Dimmed subtitle & footer */
+      .login-subtitle { opacity: 0.55; }
+      .login-footer { opacity: 0.55; }
       /* Consistent spacing between Tabler icons and adjacent text */
       i.ti { margin-right: 0.25em; }
       .btn-icon > i.ti, .input-icon-addon > i.ti { margin-right: 0; }
@@ -65,7 +68,7 @@
       <div class="container container-tight py-4">
         <div class="text-center mb-4">
           <h1><i class="ti ti-key"></i> {{appName}}</h1>
-          <p class="text-secondary">Centralized SSH Key Management and Deployment</p>
+          <p class="text-secondary login-subtitle">Centralized SSH Key Management and Deployment</p>
         </div>
         <div class="card card-md">
           <div class="card-body">
@@ -133,7 +136,7 @@
             {{end}}
           </div>
         </div>
-        <div class="text-center text-secondary mt-3">
+        <div class="text-center text-secondary login-footer mt-3">
           &copy; 2026 <a href="https://keywarden.app" target="_blank" rel="noopener noreferrer" class="text-secondary text-decoration-none">Keywarden</a>
         </div>
       </div>

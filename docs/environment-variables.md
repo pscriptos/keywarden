@@ -121,4 +121,5 @@ In addition to environment variables, the following settings are configured thro
 | `lockout_duration` | `15` | Lockout duration in minutes |
 | `mfa_required` | `false` | Enforce MFA for all users |
 | `login_card_style` | `default` | Login card style: `default` or `glass` |
+| `login_text_color` | `light` | Login text color over background image: `light` or `dark` (auto-detected on upload) |
 | `login_subtitle` | _(empty)_ | Custom subtitle on the login page |
