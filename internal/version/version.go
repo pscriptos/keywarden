@@ -11,4 +11,4 @@ package version
 // It can still be overridden at build time via:
 //
 //	go build -ldflags "-X git.techniverse.net/scriptos/keywarden/internal/version.Version=v1.0.0"
-var Version = "v0.3.0-alpha"
+var Version = "v0.4.0-alpha"
