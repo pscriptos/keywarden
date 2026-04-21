@@ -1,12 +1,31 @@
-# Keywarden
+<p align="center">
+  <a href="https://techniverse.net">
+    <img src="https://assets.techniverse.net/f1/git/graphics/repo-techniverse-logo.png" alt="Techniverse Community" height="70" />
+  </a>
+</p>
+
+<h1 align="center">Keywarden</h1>
+
+<h4 align="center">
+  Self-hosted SSH key management and deployment for teams.
+</h4>
+
+<h6 align="center">
+  <a href="https://www.cleveradmin.de">🏰 Website</a>
+  ·
+  <a href="https://techniverse.net">📰 Community</a>
+  ·
+  <a href="https://social.techniverse.net/@donnerwolke">🐘 Mastodon</a>
+  ·
+  <a href="https://matrix.to/#/#support:techniverse.net">💬 Support</a>
+</h6>
+<br><br>
 
 **Keywarden** is a self-hosted web application for centralized SSH key management and deployment. It lets you generate, store, and deploy SSH keys to Linux servers from a single web interface — with full audit logging, role-based access control, and automated temporary access scheduling.
 
-
 ![Keywarden Dashboard](assets/img/dashboard.png)
 
-
-## ⚠️ Alpha Software — Important Notice
+## ⚠️ Alpha Software
 
 > **Keywarden is currently in alpha status.**
 >
@@ -16,32 +35,30 @@
 
 ---
 
-## Features
+## ✨ Features
 
-- **SSH Key Management** — Generate (RSA 2048/4096, Ed25519, Ed448) or import existing keys
-- **Encrypted Storage** — Private keys encrypted at rest with AES-256-GCM
-- **Server & Group Management** — Register servers, organize into groups
-- **Access Assignments** — Declarative access model: assign users + keys to servers with system user, sudo, and user creation
-- **Temporary Access** — Schedule time-limited access with automatic expiry (key removal, user disable, or user deletion)
-- **Three-Tier Roles** — Owner, Admin, and User with distinct permissions
-- **User Invitations** — Invite users via secure email links
-- **Key Enforcement** — Bastillion-style enforced key management: automatically detect and remove unauthorized SSH keys from servers
-- **Two-Factor Authentication** — TOTP-based MFA, optionally enforced for all users
-- **Password Policies & Account Lockout** — Configurable complexity rules and brute-force protection
-- **Audit Log** — Every action tracked with user, IP, timestamp, and details
-- **Update Notifications** — Automatic update check with version badge in the header for admins
-- **Encrypted Backup/Restore** — Full database export with password-based encryption
-- **Docker-Native** — Single container with embedded SQLite, no external database required
+| Area | What Keywarden provides |
+|---|---|
+| **SSH keys** | Generate RSA 2048/4096, Ed25519, and Ed448 keys or import existing keys. |
+| **Secure storage** | Store private keys encrypted at rest with AES-256-GCM. |
+| **Servers & groups** | Register Linux servers and organize them into manageable groups. |
+| **Access assignments** | Assign users and keys to servers with system user, sudo, and user creation options. |
+| **Temporary access** | Schedule time-limited access with automatic expiry actions. |
+| **Roles & invitations** | Manage Owner, Admin, and User roles and invite users with secure email links. |
+| **Enforcement** | Detect and remove unauthorized SSH keys from managed servers. |
+| **Authentication** | Protect accounts with TOTP-based MFA, password policies, and account lockout. |
+| **Audit & updates** | Track every action and notify admins about available updates. |
+| **Backup & Docker** | Export encrypted database backups and run with a single Docker container and embedded SQLite. |
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
-### Prerequisites
+### ✅ Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
 
-### 1. Clone and configure
+### 📦 1. Clone and Configure
 
 ```bash
 git clone https://git.techniverse.net/scriptos/keywarden.git
@@ -62,13 +79,13 @@ KEYWARDEN_ENCRYPTION_KEY=<second generated string>
 
 > **Important:** Change both keys to unique random strings. The encryption key protects all stored SSH private keys — if lost, they cannot be recovered. See the [Quick Start Guide](docs/quickstart.md) for more options to generate secure keys.
 
-### 2. Start
+### ▶️ 2. Start Keywarden
 
 ```bash
 docker compose up -d
 ```
 
-### 3. Get the initial password
+### 🔑 3. Get the Initial Password
 
 ```bash
 docker compose logs keywarden
@@ -85,11 +102,11 @@ Look for the auto-generated admin password in the output:
 ════════════════════════════════════════════════════════════
 ```
 
-### 4. Open
+### 🌐 4. Open the Web UI
 
 Navigate to `http://your-host:8080` and log in. You will be prompted to change the password.
 
-### 5. Deploy the master key
+### 🛡️ 5. Deploy the Master Key
 
 After login, copy the **system master key** (shown in Admin Settings and in the startup logs) and add it to the `authorized_keys` of the root user on every server you want to manage:
 
@@ -99,7 +116,7 @@ echo "ssh-ed25519 AAAA... keywarden-system-master" >> /root/.ssh/authorized_keys
 
 ---
 
-## Documentation
+## 📚 Documentation
 
 For detailed documentation, see the [docs/](docs/README.md) folder:
 
@@ -118,7 +135,7 @@ For detailed documentation, see the [docs/](docs/README.md) folder:
 
 ---
 
-## License
+## ⚖️ License
 
 Keywarden is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0-or-later)](LICENSE).
 
@@ -126,7 +143,7 @@ Keywarden is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.
 
 ---
 
-## Community
+## 💬 Community
 
 Join the **Keywarden Matrix chat** to discuss the project, ask questions, or share feedback:
 
@@ -136,7 +153,7 @@ Join the **Keywarden Matrix chat** to discuss the project, ask questions, or sha
 
 ---
 
-## Repository & Mirror
+## 🧭 Repository & Mirror
 
 | | URL |
 |---|---|
@@ -147,3 +164,14 @@ Join the **Keywarden Matrix chat** to discuss the project, ask questions, or sha
 The **primary repository** is hosted on Gitea. The GitHub repository is a read-only mirror.
 
 **Bug reports & feature requests:** Please open an [Issue on GitHub](https://github.com/pscriptos/keywarden/issues) — registration on the Gitea instance is currently closed.
+
+<br><br>
+<p align="center">
+  <img src="https://assets.techniverse.net/f1/git/graphics/gray0-catonline.svg" alt="">
+</p>
+
+<p align="center">
+  <sub>
+     © Patrick Asmus · Techniverse Network · <a href="./LICENSE">Lizenz</a>
+  </sub>
+</p>
